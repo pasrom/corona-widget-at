@@ -2,7 +2,10 @@
 // 3-stellige GKZ verwenden (zweite Spalte in https://covid19-dashboard.ages.at/data/CovidFaelle_GKZ.csv).
 // Widget Parameter: "204,KFL;312;706" für Klagenfurt Land (angezeigt als KFL), Korneuburg und Landeck
 //
-// Basiert auf der deutschen Variante von kevinkub (https://gist.github.com/kevinkub/46caebfebc7e26be63403a7f0587f664) und Baumchen (https://gist.github.com/Baumchen/6d91df0a4c76c45b15576db0632e4329).
+// Basiert auf der deutschen Variante von
+// - kevinkub https://gist.github.com/kevinkub/46caebfebc7e26be63403a7f0587f664
+// - Baumchen https://gist.github.com/Baumchen/6d91df0a4c76c45b15576db0632e4329
+//
 // Angaben ohne Gewähr.
 
 const apiUrl = "https://covid19-dashboard.ages.at/data/CovidFaelle_GKZ.csv"
