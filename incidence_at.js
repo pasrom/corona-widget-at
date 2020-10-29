@@ -101,15 +101,15 @@ function getRValues(data) {
 }
 
 async function createWidget(items) {
-  if (!args.widgetParameter) {
-    const list = new ListWidget()
-    list.setPadding(0,0,0,0)
-    //list.addText("GKZ als Parameter definieren.")
-    //return list
+  const list = new ListWidget()
+  list.setPadding(0,0,0,0)
+  if (args.widgetParameter) {
+    parameter = args.widgetParameter
+  } else {
+    parameter = "802,B;804,FK;803,DO" 
   }
 
-  //const locations = args.widgetParameter.split(";").map(parseLocation)
-  const locations = "802,B;804,FK;803,DO".split(";").map(parseLocation)
+  const locations = parameter.split(";").map(parseLocation)
   const loc = "10,AT".split(";").map(parseLocation)
   const apidata = await new Request(apiUrl).loadString()
   const apidata_lines = apidata.split("\n").reverse()
@@ -122,7 +122,6 @@ async function createWidget(items) {
   const apidata_r = await new Request(apiRValues).loadString()
   matched3 = getRValues(apidata_r)
 
-  const list = new ListWidget()
   list.setPadding(2,10,2,0)
   const data_today = calc(apidata_Timeline_lines, loc[0])
   const data_yesterday = calc(apidata_Timeline_lines, loc[0], 1)
