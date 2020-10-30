@@ -7,10 +7,59 @@
 // - Baumchen https://gist.github.com/Baumchen/6d91df0a4c76c45b15576db0632e4329
 //
 // No guarantee on correctness and completeness of the information provided.
-
 const apiUrl = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv"
 const apiUrlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
 const apiRValues = "https://script.google.com/macros/s/AKfycbxBUvqznZNNlmebm2nYN5WlNoApjpoR22Jzduat5Qwi5gHnAd3d/exec"
+
+class LineChart {
+  // LineChart by https://kevinkub.de/
+  constructor(width, height, values) {
+    this.ctx = new DrawContext();
+    this.ctx.size = new Size(width, height);
+    this.values = values;
+  }
+  _calculatePath() {
+    let maxValue = Math.max(...this.values);
+    let minValue = Math.min(...this.values);
+    let difference = maxValue - minValue;
+    let count = this.values.length;
+    let step = this.ctx.size.width / (count - 1);
+    let points = this.values.map((current, index, all) => {
+      let x = step * index;
+      let y = this.ctx.size.height - (current - minValue) / difference * this.ctx.size.height;
+      return new Point(x, y);
+    });
+    return this._getSmoothPath(points);
+  }
+  _getSmoothPath(points) {
+    let path = new Path();
+    path.move(new Point(0, this.ctx.size.height));
+    path.addLine(points[0]);
+    for (let i = 0; i < points.length - 1; i++) {
+      let xAvg = (points[i].x + points[i + 1].x) / 2;
+      let yAvg = (points[i].y + points[i + 1].y) / 2;
+      let avg = new Point(xAvg, yAvg);
+      let cp1 = new Point((xAvg + points[i].x) / 2, points[i].y);
+      let next = new Point(points[i + 1].x, points[i + 1].y);
+      let cp2 = new Point((xAvg + points[i + 1].x) / 2, points[i + 1].y);
+      path.addQuadCurve(avg, cp1);
+      path.addQuadCurve(next, cp2);
+    }
+    path.addLine(new Point(this.ctx.size.width, this.ctx.size.height));
+    path.closeSubpath();
+    return path;
+  }
+  configure(fn) {
+    let path = this._calculatePath();
+    if (fn) {
+      fn(this.ctx, path);
+    } else {
+      this.ctx.addPath(path);
+      this.ctx.fillPath(path);
+    }
+    return this.ctx;
+  }
+}
 
 const calcMode = {
   none: 0,
@@ -18,7 +67,7 @@ const calcMode = {
   cases: 2,
 };
 
-function parseLocation (location) {
+function parseLocation(location) {
   const components = location.split(",")
   return {
     gkz: components[0],
@@ -35,11 +84,11 @@ function calc(data, location, nr = 0) {
         let fmt = new DateFormatter()
         fmt.dateFormat = 'dd.MM.yyyy HH:mm:ss'
         return {
-         incidence: Math.round(parseFloat(components[6]) * (100000 / parseFloat(components[3]))),
-         cases: parseFloat(components[4]),
-         cured: parseFloat(components[10]),
-         name: location["name"] ? location["name"] : components[1],
-         date: fmt.date(components[0]),
+          incidence: Math.round(parseFloat(components[6]) * (100000 / parseFloat(components[3]))),
+          cases: parseFloat(components[4]),
+          cured: parseFloat(components[10]),
+          name: location["name"] ? location["name"] : components[1],
+          date: fmt.date(components[0]),
         }
       }
       ctr++
@@ -48,6 +97,17 @@ function calc(data, location, nr = 0) {
   return {
     error: "GKZ unbekannt.",
   }
+}
+
+function getTimeline(data, location, nr) {
+  var timeline = []
+  for (line of data) {
+    const components = line.split(";")
+    if (components[2] === location["gkz"]) {
+      timeline.push(parseFloat(components[nr]))
+    }
+  }
+  return timeline
 }
 
 let widget = await createWidget()
@@ -76,14 +136,13 @@ function getRValues(data) {
 
   let fmt = new DateFormatter()
   fmt.dateFormat = 'dd.MM.yyyy'
-  
+
   matched3 = []
   for (var i = 0; i <= matched.length - 1; i++) {
     if (matched2[i].match(regex_date) == null) {
       date = new Date()
-    } else
-    {
-      date = fmt.date(matched2[i].match(regex_date)[0]) 
+    } else {
+      date = fmt.date(matched2[i].match(regex_date)[0])
     }
     if (matched2[i].includes("Reproduktionszahl")) {
       name = "R"
@@ -91,10 +150,10 @@ function getRValues(data) {
       name = "Cases"
     }
     tmp = {
-        name: name,
-        value: parseFloat(matched[i].replace(",",".")),
-        date: date,
-        }
+      name: name,
+      value: parseFloat(matched[i].replace(",", ".")),
+      date: date,
+    }
     matched3.push(tmp)
   }
   return matched3
@@ -102,13 +161,12 @@ function getRValues(data) {
 
 async function createWidget(items) {
   const list = new ListWidget()
-  list.setPadding(0,0,0,0)
+  list.setPadding(10, 10, 0, 0)
   if (args.widgetParameter) {
     parameter = args.widgetParameter
   } else {
-    parameter = "802,B;804,FK;803,DO" 
+    parameter = "802,B;804,FK;803,DO"
   }
-
   const locations = parameter.split(";").map(parseLocation)
   const loc = "10,AT".split(";").map(parseLocation)
   const apidata = await new Request(apiUrl).loadString()
@@ -122,7 +180,6 @@ async function createWidget(items) {
   const apidata_r = await new Request(apiRValues).loadString()
   matched3 = getRValues(apidata_r)
 
-  list.setPadding(2,10,2,0)
   const data_today = calc(apidata_Timeline_lines, loc[0])
   const data_yesterday = calc(apidata_Timeline_lines, loc[0], 1)
 
@@ -135,7 +192,6 @@ async function createWidget(items) {
   day_month_formatter.dateFormat = "dd/MM"
   const infected_stack = list.addStack()
   infected_stack.layoutHorizontally()
-  infected_stack.centerAlignContent()
 
   for (var i = 0; i < 3; i++) {
     const text_cases = data_timeline[i]["cases"] + " " + getTrendArrow(data_timeline[i + 1]["cases"], data_timeline[i]["cases"])
@@ -157,15 +213,16 @@ async function createWidget(items) {
     date_infected.centerAlignText()
     infected_stack.addSpacer()
   }
-  list.addSpacer(2)
-
-  const header = list.addText("🦠 Incidence " + day_month_formatter.string(data_today["date"]))
+  list.addSpacer()
+  const incidence_stack = list.addStack()
+  incidence_stack.layoutVertically()
+  incidence_stack.useDefaultPadding()
+  const header = incidence_stack.addText("🦠 Incidence " + day_month_formatter.string(data_today["date"]))
   header.font = Font.mediumSystemFont(11)
-  list.addSpacer(2)
+  incidence_stack.addSpacer(2)
 
-  const line = list.addStack()
+  const line = incidence_stack.addStack()
   line.layoutHorizontally()
-  line.centerAlignContent()
   line.useDefaultPadding()
 
   // show incidence for austria
@@ -181,38 +238,75 @@ async function createWidget(items) {
     }
     printIncidence(line, data, data_yesterday_2)
   }
+  list.addSpacer()
+  /*
+  let chartTextStack = list.addStack()
+      chartTextStack.backgroundColor = new Color('888888', 0.5)
+  chartTextStack.cornerRadius = 4
+  text1 = chartTextStack.addText("New cases")
+  text1.font = Font.systemFont(10)
+  text1.cornerRadius = 6
+  text1.backgroundColor = new Color("888888")
+  chartTextStack.addSpacer()
+  text2 = chartTextStack.addText("active")
+  text2.font = Font.systemFont(10)
+  */
+  let data = getTimeline(apidata_Timeline_lines, loc[0], 4).reverse()
+  let sumCases = getTimeline(apidata_Timeline_lines, loc[0], 6).reverse()
+  let sumCured = getTimeline(apidata_Timeline_lines, loc[0], 12).reverse()
+  let infected = sumCases.filter(x => !sumCured.includes(x));
+
+  let chart2 = new LineChart(1000, 400, infected).configure((ctx, path) => {
+    ctx.opaque = false;
+    ctx.setStrokeColor(Color.white());
+    ctx.setLineWidth(7)
+    ctx.addPath(path);
+    ctx.strokePath();
+  }).getImage();
+  let chartStack = list.addStack()
+  chartStack.setPadding(-10, -10, -0.5, -0.5)
+  let image = chartStack.addImage(chart2);
+  image.applyFittingContentMode()
+
+  let chart = new LineChart(800, 800, data).configure((ctx, path) => {
+    ctx.opaque = false;
+    ctx.setFillColor(new Color("888888", .5));
+    ctx.addPath(path);
+    ctx.fillPath(path);
+  }).getImage();
+  list.backgroundImage = chart
 
   return list
 }
 
-function printIncidence(stack, data, data_yesterday){
-    value = data["incidence"]
-    description = data["name"]
-    const line = stack.addStack()
-    line.setPadding(0,0,0,0)
-    line.layoutVertically()
-    const label = line.addText(String(value) + getTrendArrow(data_yesterday["incidence"], data["incidence"]))
-    label.font = Font.boldSystemFont(11)
-    label.centerAlignText()
+function printIncidence(stack, data, data_yesterday) {
+  value = data["incidence"]
+  description = data["name"]
+  const line = stack.addStack()
+  line.setPadding(0, 0, 0, 0)
+  line.layoutVertically()
+  const label = line.addText(String(value) + getTrendArrow(data_yesterday["incidence"], data["incidence"]))
+  label.font = Font.boldSystemFont(11)
+  label.centerAlignText()
 
-    if(value >= 50) {
-      label.textColor = Color.red()
-    } else if(value >= 35) {
-      label.textColor = Color.orange()
-    } else {
-      label.textColor = Color.green()
-    }
+  if (value >= 50) {
+    label.textColor = Color.red()
+  } else if (value >= 35) {
+    label.textColor = Color.orange()
+  } else {
+    label.textColor = Color.green()
+  }
 
-    stack.addSpacer(1)
+  stack.addSpacer(1)
 
-    const name = line.addText(description)
-    name.minimumScaleFactor = 0.3
-    name.font = Font.systemFont(10)
-    name.lineLimit = 1
+  const name = line.addText(description)
+  name.minimumScaleFactor = 0.3
+  name.font = Font.systemFont(10)
+  name.lineLimit = 1
 
-    stack.addSpacer(2)
+  stack.addSpacer(2)
 }
 
 function getTrendArrow(preValue, currentValue) {
-    return (currentValue <= preValue) ? '↓' : '↑'
+  return (currentValue <= preValue) ? '↓' : '↑'
 }
