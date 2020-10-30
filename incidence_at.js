@@ -11,6 +11,9 @@ const apiUrl = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.
 const apiUrlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
 const apiRValues = "https://script.google.com/macros/s/AKfycbxBUvqznZNNlmebm2nYN5WlNoApjpoR22Jzduat5Qwi5gHnAd3d/exec"
 
+const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
+const jsonBKZData = "https://api.npoint.io/6b3942356a3ddcb584b3"
+
 class LineChart {
   // LineChart by https://kevinkub.de/
   constructor(width, height, values) {
@@ -159,14 +162,44 @@ function getRValues(data) {
   return matched3
 }
 
+async function getLocation() {
+  try {
+    Location.setAccuracyToThreeKilometers()
+    return await Location.current()
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getBKZNumber(url, location) {
+  const act_location = await getLocation();
+  let discrictFromGps = await new Request(reverseGeocodingUrl(act_location)).loadJSON()
+  let BKZData = await new Request(url).loadJSON()
+  tmp = discrictFromGps[0].display_name
+  reg = /Bezirk (.*?),/
+  discrict = reg.exec(tmp)[1]
+  actBKZ = 0
+  for (var i = 0; i < BKZData.length; i++) {
+    if (BKZData[i].Bezirk === discrict) {
+      actBKZ = BKZData[i].BKZ + "," + BKZData[i].KFZ
+      break
+    }
+  }
+  return actBKZ
+}
+
 async function createWidget(items) {
   const list = new ListWidget()
   list.setPadding(10, 10, 0, 0)
   if (args.widgetParameter) {
     parameter = args.widgetParameter
   } else {
-    parameter = "802,B;804,FK;803,DO"
+    parameter = "802,B;803,DO"
   }
+
+  BKZNr = await getBKZNumber(jsonBKZData)
+  parameter = BKZNr + ";" + parameter
+
   const locations = parameter.split(";").map(parseLocation)
   const loc = "10,AT".split(";").map(parseLocation)
   const apidata = await new Request(apiUrl).loadString()
