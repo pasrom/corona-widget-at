@@ -194,7 +194,7 @@ async function createWidget(items) {
   if (args.widgetParameter) {
     parameter = args.widgetParameter
   } else {
-    parameter = "802,B;803,DO"
+    parameter = "802,B;803,DO;804,FK"
   }
 
   BKZNr = await getBKZNumber(jsonBKZData)
@@ -262,7 +262,12 @@ async function createWidget(items) {
   printIncidence(line, data_today, data_today["name"])
 
   // show incidence for given districts
+  ctr = 0
   for (location of locations) {
+    // do not print if it's the same as the actual location
+    if (locations[0]["gkz"] === location["gkz"] && ctr != 0) {
+      continue
+    }
     const data = calc(apidata_lines, location)
     const data_yesterday_2 = calc(apidata_lines, location, 1)
     if (data["error"]) {
@@ -270,6 +275,7 @@ async function createWidget(items) {
       continue
     }
     printIncidence(line, data, data_yesterday_2)
+    ctr++
   }
   list.addSpacer()
   /*
