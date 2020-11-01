@@ -197,8 +197,13 @@ async function createWidget(items) {
     parameter = "802,B;803,DO;804,FK"
   }
 
-  BKZNr = await getBKZNumber(jsonBKZData)
-  parameter = BKZNr + ";" + parameter
+  try {
+    BKZNr = await getBKZNumber(jsonBKZData) + ";"
+  } catch (e) {
+    BKZNr = ""
+    log(e)
+  }
+  parameter = BKZNr  + parameter
 
   const locations = parameter.split(";").map(parseLocation)
   const loc = "10,AT".split(";").map(parseLocation)
