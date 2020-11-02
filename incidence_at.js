@@ -16,25 +16,26 @@ const jsonBKZData = "https://api.npoint.io/6b3942356a3ddcb584b3"
 
 class LineChart {
   // LineChart by https://kevinkub.de/
-  constructor(width, height, values) {
+  constructor(width, height, seriesA, seriesB) {
     this.ctx = new DrawContext();
     this.ctx.size = new Size(width, height);
-    this.values = values;
+    this.seriesA = seriesA;
+    this.seriesB = seriesB;
   }
-  _calculatePath() {
-    let maxValue = Math.max(...this.values);
-    let minValue = Math.min(...this.values);
+  _calculatePath(series, fillPath) {
+    let maxValue = Math.max(...series);
+    let minValue = Math.min(...series);
     let difference = maxValue - minValue;
-    let count = this.values.length;
+    let count = series.length;
     let step = this.ctx.size.width / (count - 1);
-    let points = this.values.map((current, index, all) => {
+    let points = series.map((current, index, all) => {
       let x = step * index;
       let y = this.ctx.size.height - (current - minValue) / difference * this.ctx.size.height;
       return new Point(x, y);
     });
-    return this._getSmoothPath(points);
+    return this._getSmoothPath(points, fillPath);
   }
-  _getSmoothPath(points) {
+  _getSmoothPath(points, fillPath) {
     let path = new Path();
     path.move(new Point(0, this.ctx.size.height));
     path.addLine(points[0]);
@@ -48,17 +49,22 @@ class LineChart {
       path.addQuadCurve(avg, cp1);
       path.addQuadCurve(next, cp2);
     }
-    path.addLine(new Point(this.ctx.size.width, this.ctx.size.height));
-    path.closeSubpath();
+    if (fillPath) {
+      path.addLine(new Point(this.ctx.size.width, this.ctx.size.height));
+      path.closeSubpath();
+    }
     return path;
   }
   configure(fn) {
-    let path = this._calculatePath();
+    let pathA = this._calculatePath(this.seriesA, true);
+    let pathB = this._calculatePath(this.seriesB, false);
     if (fn) {
-      fn(this.ctx, path);
+      fn(this.ctx, pathA, pathB);
     } else {
-      this.ctx.addPath(path);
-      this.ctx.fillPath(path);
+      this.ctx.addPath(pathA);
+      this.ctx.fillPath(pathA);
+      this.ctx.addPath(pathB);
+      this.ctx.fillPath(pathB);
     }
     return this.ctx;
   }
@@ -283,40 +289,21 @@ async function createWidget(items) {
     ctr++
   }
   list.addSpacer()
-  /*
-  let chartTextStack = list.addStack()
-      chartTextStack.backgroundColor = new Color('888888', 0.5)
-  chartTextStack.cornerRadius = 4
-  text1 = chartTextStack.addText("New cases")
-  text1.font = Font.systemFont(10)
-  text1.cornerRadius = 6
-  text1.backgroundColor = new Color("888888")
-  chartTextStack.addSpacer()
-  text2 = chartTextStack.addText("active")
-  text2.font = Font.systemFont(10)
-  */
+
   let data = getTimeline(apidata_Timeline_lines, loc[0], 4).reverse()
   let sumCases = getTimeline(apidata_Timeline_lines, loc[0], 6).reverse()
   let sumCured = getTimeline(apidata_Timeline_lines, loc[0], 12).reverse()
   let infected = sumCases.filter(x => !sumCured.includes(x));
 
-  let chart2 = new LineChart(1000, 400, infected).configure((ctx, path) => {
-    ctx.opaque = false;
-    ctx.setStrokeColor(Color.white());
-    ctx.setLineWidth(7)
-    ctx.addPath(path);
-    ctx.strokePath();
-  }).getImage();
-  let chartStack = list.addStack()
-  chartStack.setPadding(-10, -10, -0.5, -0.5)
-  let image = chartStack.addImage(chart2);
-  image.applyFittingContentMode()
-
-  let chart = new LineChart(800, 800, data).configure((ctx, path) => {
+  let chart = new LineChart(800, 800, data, infected).configure((ctx, pathA, pathB) => {
     ctx.opaque = false;
     ctx.setFillColor(new Color("888888", .5));
-    ctx.addPath(path);
-    ctx.fillPath(path);
+    ctx.addPath(pathA);
+    ctx.fillPath(pathA);
+    ctx.addPath(pathB);
+    ctx.setStrokeColor(Color.white());
+    ctx.setLineWidth(1)
+    ctx.strokePath();
   }).getImage();
   list.backgroundImage = chart
 
