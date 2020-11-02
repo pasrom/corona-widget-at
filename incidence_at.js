@@ -233,7 +233,7 @@ async function createWidget(items) {
   parameter = BKZNr  + parameter
 
   const locations = parameter.split(";").map(parseLocation)
-  const loc = "10,AT".split(";").map(parseLocation)
+  const loc = "10,🇦🇹".split(";").map(parseLocation)
   const apidata = await new Request(apiUrl).loadString()
   const apidata_lines = apidata.split("\n").reverse()
 
