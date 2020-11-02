@@ -108,6 +108,27 @@ function calc(data, location, nr = 0) {
   }
 }
 
+function calc2(data, location, row, nr = 0) {
+  ctr = 0
+  for (line of data) {
+    const components = line.split(";")
+    if (components[2] === location["gkz"]) {
+      if (nr === ctr) {
+          let fmt = new DateFormatter()
+          fmt.dateFormat = 'dd.MM.yyyy HH:mm:ss'
+          return {
+            value: parseFloat(components[row]),
+            date: fmt.date(components[0]),
+          }
+      }
+      ctr++
+    }
+  }
+  return {
+    error: "GKZ unknown.",
+  }
+}
+
 function getTimeline(data, location, nr) {
   var timeline = []
   for (line of data) {
@@ -257,7 +278,7 @@ async function createWidget(items) {
     date_infected.centerAlignText()
     infected_stack.addSpacer()
   }
-  list.addSpacer()
+  list.addSpacer(5)
   const incidence_stack = list.addStack()
   incidence_stack.layoutVertically()
   incidence_stack.useDefaultPadding()
@@ -288,6 +309,19 @@ async function createWidget(items) {
     printIncidence(line, data, data_yesterday_2)
     ctr++
   }
+  list.addSpacer(5)
+
+  data_infected = []
+  for (var i = 0; i < 2; i++) {
+    let data_cases_sum_today = calc2(apidata_Timeline_lines, loc[0], 5, i)
+    let data_cases_cured_sum_today = calc2(apidata_Timeline_lines, loc[0], 11, i)
+    tmp = {
+      value: data_cases_sum_today["value"] - data_cases_cured_sum_today["value"],
+      date: data_cases_sum_today["date"],
+    }
+    data_infected.push(tmp)
+  }
+  printActiveCases(list, data_infected[0], data_infected[1])
   list.addSpacer()
 
   let data = getTimeline(apidata_Timeline_lines, loc[0], 4).reverse()
@@ -308,6 +342,18 @@ async function createWidget(items) {
   list.backgroundImage = chart
 
   return list
+}
+
+function printActiveCases(stack, data, data_yesterday) {
+  const line = stack.addStack()
+  line.setPadding(0, 0, 0, 0)
+  line.layoutVertically()
+  const name = line.addText("🦠 active cases 🇦🇹")
+  name.font = Font.mediumSystemFont(11)
+  const label = line.addText(data["value"] + getTrendArrow(data_yesterday["value"], data["value"]))
+  label.font = Font.boldSystemFont(11)
+  label.textColor = Color.orange()
+  label.centerAlignText()
 }
 
 function printIncidence(stack, data, data_yesterday) {
