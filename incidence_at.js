@@ -9,7 +9,7 @@
 // No guarantee on correctness and completeness of the information provided.
 const apiUrl = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv"
 const apiUrlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
-const apiRValues = "https://script.google.com/macros/s/AKfycbxBUvqznZNNlmebm2nYN5WlNoApjpoR22Jzduat5Qwi5gHnAd3d/exec"
+const apiRValues = "https://script.google.com/macros/s/AKfycby_a0nPXgDfca_SrnX1w6W8qpmjlSdmG9kMW25QnY-D8a4rfUU/exec"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://api.npoint.io/6b3942356a3ddcb584b3"
