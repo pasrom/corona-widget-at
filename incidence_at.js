@@ -291,7 +291,7 @@ async function createWidget(items) {
   line.useDefaultPadding()
 
   // show incidence for austria
-  printIncidence(line, data_today, data_today["name"])
+  printIncidence(line, data_today, data_yesterday)
 
   // show incidence for given districts
   ctr = 0
