@@ -7,9 +7,9 @@
 // - Baumchen https://gist.github.com/Baumchen/6d91df0a4c76c45b15576db0632e4329
 //
 // No guarantee on correctness and completeness of the information provided.
-const apiUrl = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv"
-const apiUrlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
-const apiRValues = "https://script.google.com/macros/s/AKfycby_a0nPXgDfca_SrnX1w6W8qpmjlSdmG9kMW25QnY-D8a4rfUU/exec"
+const urlTimelineGkz = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv"
+const urlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
+const urlRValues = "https://script.google.com/macros/s/AKfycby_a0nPXgDfca_SrnX1w6W8qpmjlSdmG9kMW25QnY-D8a4rfUU/exec"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://api.npoint.io/6b3942356a3ddcb584b3"
@@ -161,32 +161,32 @@ function getRValues(data) {
   const regex = /e(\d,?\d*)/gm;
   const regex_data = /(Reproduktionszahl|Neuinfektionen){1} ((heute|gestern)? ?(\d\d\.\d\d\.\d\d\d\d)?(\d\d:\d\d)?)/gm;
   const regex_date = /(\d\d.\d\d.\d\d\d\d)/gm;
-  matched = getRegexedData(data, regex, 1)
-  matched2 = getRegexedData(data, regex_data, 0)
+  matched_data = getRegexedData(data, regex, 1)
+  matched_date = getRegexedData(data, regex_data, 0)
 
   let fmt = new DateFormatter()
   fmt.dateFormat = 'dd.MM.yyyy'
 
-  matched3 = []
-  for (var i = 0; i <= matched.length - 1; i++) {
-    if (matched2[i].match(regex_date) == null) {
+  r_values = []
+  for (var i = 0; i <= matched_data.length - 1; i++) {
+    if (matched_date[i].match(regex_date) == null) {
       date = new Date()
     } else {
-      date = fmt.date(matched2[i].match(regex_date)[0])
+      date = fmt.date(matched_date[i].match(regex_date)[0])
     }
-    if (matched2[i].includes("Reproduktionszahl")) {
+    if (matched_date[i].includes("Reproduktionszahl")) {
       name = "R"
-    } else if (matched2[i].includes("Neuinfektionen")) {
+    } else if (matched_date[i].includes("Neuinfektionen")) {
       name = "Cases"
     }
     tmp = {
       name: name,
-      value: parseFloat(matched[i].replace(",", ".")),
+      value: parseFloat(matched_data[i].replace(",", ".")),
       date: date,
     }
-    matched3.push(tmp)
+    r_values.push(tmp)
   }
-  return matched3
+  return r_values
 }
 
 async function getLocation() {
@@ -198,21 +198,21 @@ async function getLocation() {
   }
 }
 
-async function getBKZNumber(url, location) {
+async function getBkzNumber(url, location) {
   const act_location = await getLocation();
-  let discrictFromGps = await new Request(reverseGeocodingUrl(act_location)).loadJSON()
+  let discrict_from_gps = await new Request(reverseGeocodingUrl(act_location)).loadJSON()
   let BKZData = await new Request(url).loadJSON()
-  tmp = discrictFromGps[0].display_name
+  tmp = discrict_from_gps[0].display_name
   reg = /Bezirk (.*?),/
-  discrict = reg.exec(tmp)[1]
-  actBKZ = 0
+  disctrict = reg.exec(tmp)[1]
+  act_bkz = 0
   for (var i = 0; i < BKZData.length; i++) {
-    if (BKZData[i].Bezirk === discrict) {
-      actBKZ = BKZData[i].BKZ + "," + BKZData[i].KFZ
+    if (BKZData[i].Bezirk === disctrict) {
+      act_bkz = BKZData[i].BKZ + "," + BKZData[i].KFZ
       break
     }
   }
-  return actBKZ
+  return act_bkz
 }
 
 async function createWidget(items) {
@@ -225,7 +225,7 @@ async function createWidget(items) {
   }
 
   try {
-    BKZNr = await getBKZNumber(jsonBKZData) + ";"
+    BKZNr = await getBkzNumber(jsonBKZData) + ";"
   } catch (e) {
     BKZNr = ""
     log(e)
@@ -233,24 +233,19 @@ async function createWidget(items) {
   parameter = BKZNr  + parameter
 
   const locations = parameter.split(";").map(parseLocation)
-  const loc = "10,🇦🇹".split(";").map(parseLocation)
-  const apidata = await new Request(apiUrl).loadString()
-  const apidata_lines = apidata.split("\n").reverse()
+  const states = "10,🇦🇹".split(";").map(parseLocation)
+  const req_timeline_gkz = await new Request(urlTimelineGkz).loadString()
+  const timeline_gkz_lines = req_timeline_gkz.split("\n").reverse()
 
-  const apidata_Timeline = await new Request(apiUrlTimeline).loadString()
-  const apidata_Timeline_lines = apidata_Timeline.split("\n").reverse()
+  const req_timeline = await new Request(urlTimeline).loadString()
+  const timeline_lines = req_timeline.split("\n").reverse()
 
-  const regex = /e(\d,?\d*)/gm;
-  const regex2 = /(Reproduktionszahl|Neuinfektionen){1} ((heute|gestern)? ?(\d\d\.\d\d\.\d\d\d\d)?(\d\d:\d\d)?)/gm;
-  const apidata_r = await new Request(apiRValues).loadString()
-  matched3 = getRValues(apidata_r)
-
-  const data_today = calc(apidata_Timeline_lines, loc[0])
-  const data_yesterday = calc(apidata_Timeline_lines, loc[0], 1)
+  const req_r_values = await new Request(urlRValues).loadString()
+  r_values = getRValues(req_r_values)
 
   data_timeline = []
   for (var i = 0; i < 4; i++) {
-    data_timeline.push(calc(apidata_Timeline_lines, loc[0], i))
+    data_timeline.push(calc(timeline_lines, states[0], i))
   }
 
   let day_month_formatter = new DateFormatter()
@@ -262,10 +257,10 @@ async function createWidget(items) {
     const text_cases = data_timeline[i]["cases"] + " " + getTrendArrow(data_timeline[i + 1]["cases"], data_timeline[i]["cases"])
     const date_cases = `${data_timeline[i]["date"].getDate()}.${data_timeline[i]["date"].getMonth() + 1}.${data_timeline[i]["date"].getFullYear()}`
     var text_r = "N/A"
-    for (var j = 0; j < matched3.length; j++) {
-      date_r = `${matched3[j]["date"].getDate()}.${matched3[j]["date"].getMonth() + 1}.${matched3[j]["date"].getFullYear()}`
-      if (date_cases === date_r && matched3[j]["name"] === "R") {
-        text_r = matched3[j]["value"]
+    for (var j = 0; j < r_values.length; j++) {
+      date_r = `${r_values[j]["date"].getDate()}.${r_values[j]["date"].getMonth() + 1}.${r_values[j]["date"].getFullYear()}`
+      if (date_cases === date_r && r_values[j]["name"] === "R") {
+        text_r = r_values[j]["value"]
         break
       }
     }
@@ -282,7 +277,7 @@ async function createWidget(items) {
   const incidence_stack = list.addStack()
   incidence_stack.layoutVertically()
   incidence_stack.useDefaultPadding()
-  const header = incidence_stack.addText("🦠 Incidence " + day_month_formatter.string(data_today["date"]))
+  const header = incidence_stack.addText("🦠 Incidence " + day_month_formatter.string(data_timeline[0]["date"]))
   header.font = Font.mediumSystemFont(11)
   incidence_stack.addSpacer(2)
 
@@ -291,7 +286,7 @@ async function createWidget(items) {
   line.useDefaultPadding()
 
   // show incidence for austria
-  printIncidence(line, data_today, data_yesterday)
+  printIncidence(line, data_timeline[0], data_timeline[1])
 
   // show incidence for given districts
   ctr = 0
@@ -300,8 +295,8 @@ async function createWidget(items) {
     if (locations[0]["gkz"] === location["gkz"] && ctr != 0) {
       continue
     }
-    const data = calc(apidata_lines, location)
-    const data_yesterday_2 = calc(apidata_lines, location, 1)
+    const data = calc(timeline_gkz_lines, location)
+    const data_yesterday_2 = calc(timeline_gkz_lines, location, 1)
     if (data["error"]) {
       list.addText(data["error"])
       continue
@@ -313,8 +308,8 @@ async function createWidget(items) {
 
   data_infected = []
   for (var i = 0; i < 2; i++) {
-    let data_cases_sum_today = calc2(apidata_Timeline_lines, loc[0], 5, i)
-    let data_cases_cured_sum_today = calc2(apidata_Timeline_lines, loc[0], 11, i)
+    let data_cases_sum_today = calc2(timeline_lines, states[0], 5, i)
+    let data_cases_cured_sum_today = calc2(timeline_lines, states[0], 11, i)
     tmp = {
       value: data_cases_sum_today["value"] - data_cases_cured_sum_today["value"],
       date: data_cases_sum_today["date"],
@@ -324,10 +319,10 @@ async function createWidget(items) {
   printActiveCases(list, data_infected[0], data_infected[1])
   list.addSpacer()
 
-  let data = getTimeline(apidata_Timeline_lines, loc[0], 4).reverse()
-  let sumCases = getTimeline(apidata_Timeline_lines, loc[0], 6).reverse()
-  let sumCured = getTimeline(apidata_Timeline_lines, loc[0], 12).reverse()
-  let infected = sumCases.filter(x => !sumCured.includes(x));
+  let data = getTimeline(timeline_lines, states[0], 4).reverse()
+  let sum_cases = getTimeline(timeline_lines, states[0], 6).reverse()
+  let sum_cured = getTimeline(timeline_lines, states[0], 12).reverse()
+  let infected = sum_cases.filter(x => !sum_cured.includes(x));
 
   let chart = new LineChart(800, 800, data, infected).configure((ctx, pathA, pathB) => {
     ctx.opaque = false;
