@@ -93,11 +93,18 @@ function calc(data, location, nr = 0) {
         let fmt = new DateFormatter()
         fmt.dateFormat = 'dd.MM.yyyy HH:mm:ss'
         return {
-          incidence: Math.round(parseFloat(components[6]) * (100000 / parseFloat(components[3]))),
-          cases: parseFloat(components[4]),
-          cured: parseFloat(components[10]),
-          name: location["name"] ? location["name"] : components[1],
           date: fmt.date(components[0]),
+          state_district: location["name"] ? location["name"] : components[1],
+          id: parseInt(components[2]),
+          residents: parseInt(components[3]),
+          cases_daily: parseInt(components[4]),
+          cases_sum: parseInt(components[5]),
+          cases_7_days: parseInt(components[6]),
+          incidence_7_days: parseInt(components[7]),
+          deaths_daily: parseInt(components[8]),
+          deaths_sum: parseInt(components[9]),
+          cured_daily: parseInt(components[10]),
+          cured_sum: parseInt(components[11]),
         }
       }
       ctr++
@@ -105,27 +112,6 @@ function calc(data, location, nr = 0) {
   }
   return {
     error: "GKZ unbekannt.",
-  }
-}
-
-function calc2(data, location, row, nr = 0) {
-  ctr = 0
-  for (line of data) {
-    const components = line.split(";")
-    if (components[2] === location["gkz"]) {
-      if (nr === ctr) {
-          let fmt = new DateFormatter()
-          fmt.dateFormat = 'dd.MM.yyyy HH:mm:ss'
-          return {
-            value: parseFloat(components[row]),
-            date: fmt.date(components[0]),
-          }
-      }
-      ctr++
-    }
-  }
-  return {
-    error: "GKZ unknown.",
   }
 }
 
@@ -254,7 +240,7 @@ async function createWidget(items) {
   infected_stack.layoutHorizontally()
 
   for (var i = 0; i < 3; i++) {
-    const text_cases = data_timeline[i]["cases"] + " " + getTrendArrow(data_timeline[i + 1]["cases"], data_timeline[i]["cases"])
+    const text_cases = data_timeline[i]["cases_daily"] + " " + getTrendArrow(data_timeline[i + 1]["cases_daily"], data_timeline[i]["cases_daily"])
     const date_cases = `${data_timeline[i]["date"].getDate()}.${data_timeline[i]["date"].getMonth() + 1}.${data_timeline[i]["date"].getFullYear()}`
     var text_r = "N/A"
     for (var j = 0; j < r_values.length; j++) {
@@ -308,11 +294,10 @@ async function createWidget(items) {
 
   data_infected = []
   for (var i = 0; i < 2; i++) {
-    let data_cases_sum_today = calc2(timeline_lines, states[0], 5, i)
-    let data_cases_cured_sum_today = calc2(timeline_lines, states[0], 11, i)
+    let data = calc(timeline_lines, states[0], i)
     tmp = {
-      value: data_cases_sum_today["value"] - data_cases_cured_sum_today["value"],
-      date: data_cases_sum_today["date"],
+      value: data["cases_sum"] - data["cured_sum"],
+      date: data["date"],
     }
     data_infected.push(tmp)
   }
@@ -352,8 +337,8 @@ function printActiveCases(stack, data, data_yesterday) {
 }
 
 function printIncidence(stack, data, data_yesterday) {
-  value = data["incidence"]
-  description = data["name"]
+  value = data["incidence_7_days"]
+  description = data["state_district"]
   const line = stack.addStack()
   line.setPadding(0, 0, 0, 0)
   line.layoutVertically()
