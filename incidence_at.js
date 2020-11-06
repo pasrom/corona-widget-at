@@ -14,6 +14,12 @@ const urlRValues = "https://script.google.com/macros/s/AKfycby_a0nPXgDfca_SrnX1w
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://api.npoint.io/6b3942356a3ddcb584b3"
 
+const widgetSizes = {
+  small: { width: 465, height: 465 },
+  medium: { width: 987, height: 465 },
+  large: { width: 987, height: 1035 },
+}
+
 class LineChart {
   // LineChart by https://kevinkub.de/
   constructor(width, height, seriesA, seriesB) {
@@ -126,7 +132,8 @@ function getTimeline(data, location, nr) {
   return timeline
 }
 
-let widget = await createWidget()
+const widgetSize = widgetSizes[config.widgetFamily] ?? widgetSizes.small
+let widget = await createWidget(widgetSize)
 if (!config.runsInWidget) {
   await widget.presentSmall()
 }
@@ -201,7 +208,7 @@ async function getBkzNumber(url, location) {
   return act_bkz
 }
 
-async function createWidget(items) {
+async function createWidget(widgetSize) {
   const list = new ListWidget()
   list.setPadding(10, 10, 0, 0)
   if (args.widgetParameter) {
@@ -309,7 +316,7 @@ async function createWidget(items) {
   let sum_cured = getTimeline(timeline_lines, states[0], 12).reverse()
   let infected = sum_cases.filter(x => !sum_cured.includes(x));
 
-  let chart = new LineChart(800, 800, data, infected).configure((ctx, pathA, pathB) => {
+  let chart = new LineChart(widgetSize.width, widgetSize.height, data, infected).configure((ctx, pathA, pathB) => {
     ctx.opaque = false;
     ctx.setFillColor(new Color("888888", .5));
     ctx.addPath(pathA);
