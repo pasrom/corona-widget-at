@@ -277,7 +277,7 @@ async function createWidget(items) {
   const incidence_stack = list.addStack()
   incidence_stack.layoutVertically()
   incidence_stack.useDefaultPadding()
-  const header = incidence_stack.addText("🦠 Incidence " + day_month_formatter.string(data_timeline[0]["date"]))
+  const header = incidence_stack.addText("🦠 7-day-incidence")
   header.font = Font.mediumSystemFont(11)
   incidence_stack.addSpacer(2)
 
