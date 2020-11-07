@@ -204,7 +204,7 @@ async function getBkzNumber(url, location) {
   act_bkz = 0
   for (var i = 0; i < BKZData.length; i++) {
     if (BKZData[i].Bezirk === disctrict) {
-      act_bkz = BKZData[i].BKZ + "," + BKZData[i].KFZ
+      act_bkz = BKZData[i].BKZ + "," + "📍" + BKZData[i].KFZ
       break
     }
   }
