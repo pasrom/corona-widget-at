@@ -113,6 +113,7 @@ function calc(data, location, nr = 0) {
           deaths_sum: parseInt(components[9]),
           cured_daily: parseInt(components[10]),
           cured_sum: parseInt(components[11]),
+          active_cases_sum: parseInt(components[5]) - parseInt(components[11]),
         }
       }
       ctr++
@@ -203,7 +204,7 @@ async function getBkzNumber(url, location) {
   act_bkz = 0
   for (var i = 0; i < BKZData.length; i++) {
     if (BKZData[i].Bezirk === disctrict) {
-      act_bkz = BKZData[i].BKZ + "," + BKZData[i].KFZ
+      act_bkz = BKZData[i].BKZ + "," + "📍" + BKZData[i].KFZ
       break
     }
   }
@@ -269,48 +270,51 @@ async function createWidget(widgetSize) {
     infected_stack.addSpacer()
   }
   list.addSpacer(5)
-  const incidence_stack = list.addStack()
-  incidence_stack.layoutVertically()
-  incidence_stack.useDefaultPadding()
-  const header = incidence_stack.addText("🦠 7-day-incidence")
-  header.font = Font.mediumSystemFont(11)
-  incidence_stack.addSpacer(2)
 
-  const line = incidence_stack.addStack()
-  line.layoutHorizontally()
-  line.useDefaultPadding()
+  // add stack for the 7 day incidence
+  const stack_incidence = list.addStack()
+  stack_incidence.layoutVertically()
+  stack_incidence.useDefaultPadding()
+  const header = stack_incidence.addText("🦠 7-day-incidence")
+  header.font = Font.mediumSystemFont(11)
+  stack_incidence.addSpacer(2)
+  const stack_incidence_print = stack_incidence.addStack()
+  stack_incidence_print.layoutHorizontally()
+  stack_incidence_print.useDefaultPadding()
+  stack_incidence.addSpacer(5)
+
+  // add stack for the active cases
+  const stack_infected = list.addStack()
+  stack_infected.setPadding(0, 0, 0, 0)
+  stack_infected.layoutVertically()
+  const name = stack_infected.addText("🦠 active cases")
+  name.font = Font.mediumSystemFont(11)
+  stack_infected.addSpacer(2)
+  const stack_infected_print = stack_infected.addStack()
+  stack_infected_print.layoutHorizontally()
+  stack_infected_print.useDefaultPadding()
+  stack_infected.addSpacer(5)
 
   // show incidence for austria
-  printIncidence(line, data_timeline[0], data_timeline[1])
+  printIncidence(stack_incidence_print, data_timeline[0], data_timeline[1])
+  // show active cases for austria
+  printActiveCases(stack_infected_print, data_timeline[0], data_timeline[1])
 
-  // show incidence for given districts
-  ctr = 0
+  // show incidence and active cases for given districts
+  let ctr = 0
   for (location of locations) {
     // do not print if it's the same as the actual location
     if (locations[0]["gkz"] === location["gkz"] && ctr != 0) {
       continue
     }
-    const data = calc(timeline_gkz_lines, location)
-    const data_yesterday_2 = calc(timeline_gkz_lines, location, 1)
-    if (data["error"]) {
-      list.addText(data["error"])
-      continue
+    const data_timeline_gkz = calc(timeline_gkz_lines, location)
+    const data_timeline_gkz_yesterday = calc(timeline_gkz_lines, location, 1)
+    printIncidence(stack_incidence_print, data_timeline_gkz, data_timeline_gkz_yesterday)
+    if (ctr === 0) {
+      printActiveCases(stack_infected_print, data_timeline_gkz, data_timeline_gkz_yesterday)
     }
-    printIncidence(line, data, data_yesterday_2)
     ctr++
   }
-  list.addSpacer(5)
-
-  data_infected = []
-  for (var i = 0; i < 2; i++) {
-    let data = calc(timeline_lines, states[0], i)
-    tmp = {
-      value: data["cases_sum"] - data["cured_sum"],
-      date: data["date"],
-    }
-    data_infected.push(tmp)
-  }
-  printActiveCases(list, data_infected[0], data_infected[1])
   list.addSpacer()
 
   let data = getTimeline(timeline_lines, states[0], 4).reverse()
@@ -339,15 +343,22 @@ async function createWidget(widgetSize) {
 }
 
 function printActiveCases(stack, data, data_yesterday) {
+  description = data["state_district"]
   const line = stack.addStack()
   line.setPadding(0, 0, 0, 0)
   line.layoutVertically()
-  const name = line.addText("🦠 active cases 🇦🇹")
-  name.font = Font.mediumSystemFont(11)
-  const label = line.addText(data["value"] + getTrendArrow(data_yesterday["value"], data["value"]))
+  const label = line.addText(data["active_cases_sum"] + getTrendArrow(data_yesterday["active_cases_sum"], data["active_cases_sum"]))
   label.font = Font.boldSystemFont(11)
   label.textColor = Color.orange()
   label.centerAlignText()
+
+  stack.addSpacer(1)
+
+  const name = line.addText(description)
+  name.minimumScaleFactor = 0.3
+  name.font = Font.systemFont(10)
+  name.lineLimit = 1
+  stack.addSpacer(2)
 }
 
 function printIncidence(stack, data, data_yesterday) {
