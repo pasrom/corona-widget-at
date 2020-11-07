@@ -9,7 +9,7 @@
 // No guarantee on correctness and completeness of the information provided.
 const urlTimelineGkz = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv"
 const urlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
-const urlRValues = "https://script.google.com/macros/s/AKfycby_a0nPXgDfca_SrnX1w6W8qpmjlSdmG9kMW25QnY-D8a4rfUU/exec"
+const urlRSeries = "https://docs.google.com/spreadsheets/u/0/d/e/2CAIWO3enVc9DPGVFb8mHr0Efql1cz6VeCLL7M4KkPm5YqvgQnDSomVM4zXE0OpN_MunJSTVbky3OAcKhPnA/gviz/chartiframe?oid=703654461"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://api.npoint.io/6b3942356a3ddcb584b3"
@@ -153,36 +153,41 @@ function getRegexedData(text, regex, nr) {
   return matched
 }
 
-function getRValues(data) {
-  const regex = /e(\d,?\d*)/gm;
-  const regex_data = /(Reproduktionszahl|Neuinfektionen){1} ((heute|gestern)? ?(\d\d\.\d\d\.\d\d\d\d)?(\d\d:\d\d)?)/gm;
-  const regex_date = /(\d\d.\d\d.\d\d\d\d)/gm;
-  matched_data = getRegexedData(data, regex, 1)
-  matched_date = getRegexedData(data, regex_data, 0)
+function datePadding(string) {
+  if (string.length === 1) {
+    return "0" + string
+  } else {
+    return string
+  }
+}
+
+function getRSeries(data) {
+  const regex = /('chartJson': )(.*?)(', ')/gm;
+  const regex_values = /(x22:)(\d+\.\d+)/gm;
+  const regex_date = /(Date)\((\d\d\d\d,\d{1,2},\d{1,2})(\))/gm;
+  matched_data = getRegexedData(data, regex, 2)
+  matched_values = (getRegexedData(matched_data[0], regex_values, 2)).reverse()
+  matched_date = (getRegexedData(matched_data[0], regex_date, 2)).reverse()
 
   let fmt = new DateFormatter()
   fmt.dateFormat = 'dd.MM.yyyy'
-
-  r_values = []
-  for (var i = 0; i <= matched_data.length - 1; i++) {
-    if (matched_date[i].match(regex_date) == null) {
-      date = new Date()
-    } else {
-      date = fmt.date(matched_date[i].match(regex_date)[0])
-    }
-    if (matched_date[i].includes("Reproduktionszahl")) {
-      name = "R"
-    } else if (matched_date[i].includes("Neuinfektionen")) {
-      name = "Cases"
-    }
-    tmp = {
-      name: name,
-      value: parseFloat(matched_data[i].replace(",", ".")),
-      date: date,
-    }
-    r_values.push(tmp)
+  r_series = []
+  // save last 7 dayes
+  let max = 7
+  if (max > matched_values.length) {
+    max = matched_values.length
   }
-  return r_values
+  for (var i = 0; i <= max - 1; i++) {
+    let date = matched_date[i].split(",")
+    date = datePadding(date[2]) + "." + datePadding(String(parseInt(date[1]) + 1)) + "." + date[0]
+    tmp = {
+      name: "R",
+      value: parseFloat(matched_values[i]).toFixed(2),
+      date: fmt.date(date),
+    }
+    r_series.push(tmp)
+  }
+  return r_series
 }
 
 async function getLocation() {
@@ -236,8 +241,8 @@ async function createWidget(widgetSize) {
   const req_timeline = await new Request(urlTimeline).loadString()
   const timeline_lines = req_timeline.split("\n").reverse()
 
-  const req_r_values = await new Request(urlRValues).loadString()
-  r_values = getRValues(req_r_values)
+  const req_r_series = await new Request(urlRSeries).loadString()
+  const r_series = getRSeries(req_r_series)
 
   data_timeline = []
   for (var i = 0; i < 4; i++) {
@@ -253,10 +258,10 @@ async function createWidget(widgetSize) {
     const text_cases = data_timeline[i]["cases_daily"] + " " + getTrendArrow(data_timeline[i + 1]["cases_daily"], data_timeline[i]["cases_daily"])
     const date_cases = `${data_timeline[i]["date"].getDate()}.${data_timeline[i]["date"].getMonth() + 1}.${data_timeline[i]["date"].getFullYear()}`
     var text_r = "N/A"
-    for (var j = 0; j < r_values.length; j++) {
-      date_r = `${r_values[j]["date"].getDate()}.${r_values[j]["date"].getMonth() + 1}.${r_values[j]["date"].getFullYear()}`
-      if (date_cases === date_r && r_values[j]["name"] === "R") {
-        text_r = r_values[j]["value"]
+    for (var j = 0; j < r_series.length; j++) {
+      date_r = `${r_series[j]["date"].getDate()}.${r_series[j]["date"].getMonth() + 1}.${r_series[j]["date"].getFullYear()}`
+      if (date_cases === date_r && r_series[j]["name"] === "R") {
+        text_r = r_series[j]["value"]
         break
       }
     }
