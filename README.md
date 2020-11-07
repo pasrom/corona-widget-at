@@ -5,7 +5,7 @@ The COVID-19 widget shows the last three days of new cases and the associated R-
 
 # Setup
 * Enable the location service for the scriptable app, if you want to use automatic displaying of the current incident you are located.
-* If you like to specify your own disctricts or states, for example add following widget parameters: `204,KFL;312;706;8,Vbg.` for Klagenfurt Land (shown as `KFL`), Korneuburg, Landeck and the state Vorarlberg shown as `Vbg.`. The 3-digit GKZ can be found in the third row of https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv. The state ID can be found here: https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv.
+* If you like to specify your own disctricts or states, for example add following widget parameters: `804,FK;803,DO;8,Vbg.` for Dornbirn (shown as `DO`), Felkirch (shown as `FK`) and the state Vorarlberg shown as `Vbg.`. The 3-digit GKZ can be found in the third row of https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv. The state ID can be found here: https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv.
 
 # Data Sources
 https://covid19-dashboard.ages.at
