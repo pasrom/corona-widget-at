@@ -217,7 +217,7 @@ async function createWidget(widgetSize) {
   if (args.widgetParameter) {
     parameter = args.widgetParameter
   } else {
-    parameter = "802,B;803,DO;804,FK"
+    parameter = "802,B;8,Vbg."
   }
 
   try {
@@ -307,11 +307,18 @@ async function createWidget(widgetSize) {
     if (locations[0]["gkz"] === location["gkz"] && ctr != 0) {
       continue
     }
-    const data_timeline_gkz = calc(timeline_gkz_lines, location)
-    const data_timeline_gkz_yesterday = calc(timeline_gkz_lines, location, 1)
-    printIncidence(stack_incidence_print, data_timeline_gkz, data_timeline_gkz_yesterday)
-    if (ctr === 0) {
-      printActiveCases(stack_infected_print, data_timeline_gkz, data_timeline_gkz_yesterday)
+    if (location["gkz"] > 10) {
+      const data_timeline_gkz = calc(timeline_gkz_lines, location)
+      const data_timeline_gkz_yesterday = calc(timeline_gkz_lines, location, 1)
+      printIncidence(stack_incidence_print, data_timeline_gkz, data_timeline_gkz_yesterday)
+      if (ctr === 0) {
+        printActiveCases(stack_infected_print, data_timeline_gkz, data_timeline_gkz_yesterday)
+      }
+    } else {
+      const data_timeline_loc = calc(timeline_lines, location)
+      const data_timeline_loc_yesterday = calc(timeline_lines, location, 1)
+      printIncidence(stack_incidence_print, data_timeline_loc, data_timeline_loc_yesterday)
+      printActiveCases(stack_infected_print, data_timeline_loc, data_timeline_loc_yesterday)
     }
     ctr++
   }
