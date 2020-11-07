@@ -356,7 +356,7 @@ function printIncidence(stack, data, data_yesterday) {
   const line = stack.addStack()
   line.setPadding(0, 0, 0, 0)
   line.layoutVertically()
-  const label = line.addText(String(value) + getTrendArrow(data_yesterday["incidence"], data["incidence"]))
+  const label = line.addText(String(value) + getTrendArrow(data_yesterday["incidence_7_days"], data["incidence_7_days"]))
   label.font = Font.boldSystemFont(11)
   label.centerAlignText()
 
