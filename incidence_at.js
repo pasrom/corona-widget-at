@@ -78,10 +78,16 @@ class LineChart {
   }
 }
 
-const calcMode = {
-  none: 0,
-  incidence: 1,
-  cases: 2,
+class DataResponse {
+    constructor(data, status = 200) {
+        this.data = data
+        this.status = status
+    }
+}
+
+const fileType = {
+  json: ".json",
+  csv: ".csv",
 };
 
 function parseLocation(location) {
@@ -134,6 +140,10 @@ function getTimeline(data, location, nr) {
   }
   return timeline
 }
+
+var fm = getFilemanager()
+let fmConfigDirectory = fm.joinPath(fm.documentsDirectory(), '/coronaWidget')
+if (!fm.isDirectory(fmConfigDirectory)) fm.createDirectory(fmConfigDirectory)
 
 const widgetSize = widgetSizes[config.widgetFamily] ?? widgetSizes.small
 let widget = await createWidget(widgetSize)
@@ -216,6 +226,43 @@ async function getBkzNumber(url, location) {
   return act_bkz
 }
 
+async function getRseriesData(url, fileName) {
+  error = 0
+  var tmp = null
+  var request = null
+  try{
+    request = await new Request(url).loadString()
+  } catch (e) {
+    error = -1
+    log(e)
+    log("using offline data: " + fileName)
+  }
+  if (error >= 0){
+    tmp = getRSeries(request)
+    saveData(fileType.json, fileName, tmp)
+  }
+  var tmp2 = await loadData(fileType.json, fileName)
+  return tmp2.data
+}
+
+async function getCsvData(url, fileName, splitChar) {
+  var error = 0
+  var fType = null
+  try{
+    var request = await new Request(url).loadString()
+  } catch (e) {
+    error = -1
+    log(e)
+    log("using offline data: " + fileName)
+    let tmp = await loadData(fType, fileName)
+    request = tmp.data
+  }
+  if (error >= 0){
+    saveData(fileType.csv, fileName, request)
+  }
+  return request.split(splitChar).reverse()
+}
+
 async function createWidget(widgetSize) {
   const list = new ListWidget()
   list.setPadding(10, 10, 0, 0)
@@ -235,14 +282,9 @@ async function createWidget(widgetSize) {
 
   const locations = parameter.split(";").map(parseLocation)
   const states = "10,🇦🇹".split(";").map(parseLocation)
-  const req_timeline_gkz = await new Request(urlTimelineGkz).loadString()
-  const timeline_gkz_lines = req_timeline_gkz.split("\n").reverse()
-
-  const req_timeline = await new Request(urlTimeline).loadString()
-  const timeline_lines = req_timeline.split("\n").reverse()
-
-  const req_r_series = await new Request(urlRSeries).loadString()
-  const r_series = getRSeries(req_r_series)
+  const timeline_gkz_lines = await getCsvData(urlTimelineGkz, "Timeline_GKZ", "\n")
+  const timeline_lines = await getCsvData(urlTimeline, "Timeline", "\n")
+  const r_series = await getRseriesData(urlRSeries, "r-series")
 
   data_timeline = []
   for (var i = 0; i < 4; i++) {
@@ -259,7 +301,8 @@ async function createWidget(widgetSize) {
     const date_cases = `${data_timeline[i]["date"].getDate()}.${data_timeline[i]["date"].getMonth() + 1}.${data_timeline[i]["date"].getFullYear()}`
     var text_r = "N/A"
     for (var j = 0; j < r_series.length; j++) {
-      date_r = `${r_series[j]["date"].getDate()}.${r_series[j]["date"].getMonth() + 1}.${r_series[j]["date"].getFullYear()}`
+      const date = new Date(r_series[j]["date"]);
+      date_r = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`
       if (date_cases === date_r && r_series[j]["name"] === "R") {
         text_r = r_series[j]["value"]
         break
@@ -403,4 +446,57 @@ function printIncidence(stack, data, data_yesterday) {
 
 function getTrendArrow(preValue, currentValue) {
   return (currentValue <= preValue) ? '↓' : '↑'
+}
+
+function saveData(fType, dataId, newData) {
+  var path = fm.joinPath(fmConfigDirectory, 'corona-widget-at-' + dataId + fType)
+  switch (fType) {
+    case fileType.json:
+      fm.writeString(path, JSON.stringify(newData))
+      break;
+    case fileType.csv:
+    default:
+      fm.writeString(path, newData)
+      break;
+  }
+}
+
+async function loadData(fType, dataId) {
+    let path = fm.joinPath(fmConfigDirectory, 'corona-widget-at-' + dataId + fType)
+    if (fm.isFileStoredIniCloud(path) && !fm.isFileDownloaded(path)) {
+        await fm.downloadFileFromiCloud(path)
+    }
+    if (fm.fileExists(path)) {
+        try {
+            let string = fm.readString(path)
+            switch (fType) {
+              case fileType.json:
+                return new DataResponse(JSON.parse(string))
+              case fileType.csv:
+              default:
+                data = string
+                return new DataResponse(string)
+            }
+         } catch (e) {
+            log(e)
+            return new DataResponse(null, 500)
+         }
+    }
+    return new DataResponse(null, 404)
+}
+
+
+function getFilemanager() {
+    try {
+        fm = FileManager.iCloud()
+    } catch (e) {
+        fm = FileManager.local()
+    }
+    // check if user logged in iCloud
+    try { 
+        fm.documentsDirectory()
+    } catch(e) {
+        fm = FileManager.local()
+    }
+    return fm
 }
