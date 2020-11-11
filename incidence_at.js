@@ -114,7 +114,7 @@ function calc(data, location, nr = 0) {
         var month = +components[0].substring(3,5)
         var year = +components[0].substring(6,11)
         return {
-          date: (new Date(Date.UTC(year, month, day, 0, 0, 0, 0))),
+          date: (new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))),
           state_district: location["name"] ? location["name"] : components[1],
           id: parseInt(components[2]),
           residents: parseInt(components[3]),
@@ -194,13 +194,10 @@ function getRSeries(data) {
   for (var i = 0; i <= max - 1; i++) {
     let date = matched_date[i].split(",")
     date = datePadding(date[2]) + "." + datePadding(String(parseInt(date[1]) + 1)) + "." + date[0]
-    var day = +date.substring(0,2)
-    var month = +date.substring(3,5)
-    var year = +date.substring(6,11)
     tmp = {
       name: "R",
       value: parseFloat(matched_values[i]).toFixed(2),
-      date:  date,
+      date: date,
     }
     r_series.push(tmp)
   }
@@ -323,7 +320,7 @@ async function createWidget(widgetSize) {
   for (var i = 0; i < 3; i++) {
     const text_cases = data_timeline_new[i]["cases_daily"] + " " + getTrendArrow(data_timeline_new[i + 1]["cases_daily"], data_timeline_new[i]["cases_daily"])
     const date_cases = ('0' + data_timeline_new[i]["date"].getDate()).slice(-2) + '.'
-             + ('0' + (data_timeline_new[i]["date"].getMonth())).slice(-2) + '.'
+             + ('0' + (data_timeline_new[i]["date"].getMonth() + 1)).slice(-2) + '.'
              + data_timeline_new[i]["date"].getFullYear();
     const text_date = `${data_timeline_new[i]["date"].getDate()}/${data_timeline_new[i]["date"].getMonth()}`
     var text_r = "N/A"
