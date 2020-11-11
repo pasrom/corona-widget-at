@@ -10,6 +10,7 @@
 const urlTimelineGkz = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv"
 const urlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
 const urlRSeries = "https://docs.google.com/spreadsheets/u/0/d/e/2CAIWO3enVc9DPGVFb8mHr0Efql1cz6VeCLL7M4KkPm5YqvgQnDSomVM4zXE0OpN_MunJSTVbky3OAcKhPnA/gviz/chartiframe?oid=703654461"
+const urlActTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMnBhOvoeZyV7UJSzTYD40Z4v4hG2JxJ2WH5jIHCWzBDzUOKsHQ1P1rVfgWt_WCgncMSsHvXThEULt/pub?gid=0&single=true&output=csv"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://api.npoint.io/6b3942356a3ddcb584b3"
@@ -101,13 +102,19 @@ function parseLocation(location) {
 function calc(data, location, nr = 0) {
   ctr = 0
   for (line of data) {
-    const components = line.split(";")
+    var components = null
+    if(line.search(";") >= 0) {
+      components = line.split(";")
+    } else {
+      components = line.split(",")
+    }
     if (components[2] === location["gkz"]) {
       if (nr === ctr) {
-        let fmt = new DateFormatter()
-        fmt.dateFormat = 'dd.MM.yyyy HH:mm:ss'
+        var day = +components[0].substring(0,2)
+        var month = +components[0].substring(3,5)
+        var year = +components[0].substring(6,11)
         return {
-          date: fmt.date(components[0]),
+          date: (new Date(Date.UTC(year, month, day, 0, 0, 0, 0))),
           state_district: location["name"] ? location["name"] : components[1],
           id: parseInt(components[2]),
           residents: parseInt(components[3]),
@@ -178,9 +185,6 @@ function getRSeries(data) {
   matched_data = getRegexedData(data, regex, 2)
   matched_values = (getRegexedData(matched_data[0], regex_values, 2)).reverse()
   matched_date = (getRegexedData(matched_data[0], regex_date, 2)).reverse()
-
-  let fmt = new DateFormatter()
-  fmt.dateFormat = 'dd.MM.yyyy'
   r_series = []
   // save last 7 dayes
   let max = 7
@@ -190,10 +194,13 @@ function getRSeries(data) {
   for (var i = 0; i <= max - 1; i++) {
     let date = matched_date[i].split(",")
     date = datePadding(date[2]) + "." + datePadding(String(parseInt(date[1]) + 1)) + "." + date[0]
+    var day = +date.substring(0,2)
+    var month = +date.substring(3,5)
+    var year = +date.substring(6,11)
     tmp = {
       name: "R",
       value: parseFloat(matched_values[i]).toFixed(2),
-      date: fmt.date(date),
+      date:  date,
     }
     r_series.push(tmp)
   }
@@ -282,34 +289,52 @@ async function createWidget(widgetSize) {
 
   const locations = parameter.split(";").map(parseLocation)
   const states = "10,🇦🇹".split(";").map(parseLocation)
+
   const timeline_gkz_lines = await getCsvData(urlTimelineGkz, "Timeline_GKZ", "\n")
   const timeline_lines = await getCsvData(urlTimeline, "Timeline", "\n")
+  const timeline2_lines = await getCsvData(urlActTimeline, "Timeline2", "\r\n")
   const r_series = await getRseriesData(urlRSeries, "r-series")
 
-  data_timeline = []
+  var data_timeline = []
   for (var i = 0; i < 4; i++) {
     data_timeline.push(calc(timeline_lines, states[0], i))
   }
+  var data_timeline_2 = []
+  for (var i = 0; i < 3; i++) {
+    data_timeline_2.push(calc(timeline2_lines, states[0], i))
+  }
 
-  let day_month_formatter = new DateFormatter()
-  day_month_formatter.dateFormat = "dd/MM"
+  data_timeline_2.reverse()
+  var data_timeline_new = [...data_timeline]
+  data_timeline_new.reverse()
+  for (var k = 0; k < data_timeline_2.length; k++) {
+    var date_source_2 = new Date(data_timeline_2[k]["date"].getFullYear(), data_timeline_2[k]["date"].getMonth(), data_timeline_2[k]["date"].getDate());
+    var i = data_timeline_new.length - 1
+    var date_source_1 = new Date(data_timeline_new[i]["date"].getFullYear(), data_timeline_new[i]["date"].getMonth(), data_timeline_new[i]["date"].getDate());
+    if (date_source_2.getTime() > date_source_1.getTime()) {
+      data_timeline_new.push(data_timeline_2[k])
+    }
+  }
+  data_timeline_new.reverse()
+
   const infected_stack = list.addStack()
   infected_stack.layoutHorizontally()
 
   for (var i = 0; i < 3; i++) {
-    const text_cases = data_timeline[i]["cases_daily"] + " " + getTrendArrow(data_timeline[i + 1]["cases_daily"], data_timeline[i]["cases_daily"])
-    const date_cases = `${data_timeline[i]["date"].getDate()}.${data_timeline[i]["date"].getMonth() + 1}.${data_timeline[i]["date"].getFullYear()}`
+    const text_cases = data_timeline_new[i]["cases_daily"] + " " + getTrendArrow(data_timeline_new[i + 1]["cases_daily"], data_timeline_new[i]["cases_daily"])
+    const date_cases = ('0' + data_timeline_new[i]["date"].getDate()).slice(-2) + '.'
+             + ('0' + (data_timeline_new[i]["date"].getMonth())).slice(-2) + '.'
+             + data_timeline_new[i]["date"].getFullYear();
+    const text_date = `${data_timeline_new[i]["date"].getDate()}/${data_timeline_new[i]["date"].getMonth()}`
     var text_r = "N/A"
     for (var j = 0; j < r_series.length; j++) {
-      const date = new Date(r_series[j]["date"]);
-      date_r = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`
-      if (date_cases === date_r && r_series[j]["name"] === "R") {
+      if (date_cases === r_series[j]["date"] && r_series[j]["name"] === "R") {
         text_r = r_series[j]["value"]
         break
       }
     }
     const date_infected = infected_stack.addText(
-      day_month_formatter.string(data_timeline[i]["date"]) + "\n" +
+      text_date + "\n" +
       text_cases + "\n" +
       text_r
     )
