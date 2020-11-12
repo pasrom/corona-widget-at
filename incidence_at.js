@@ -251,14 +251,13 @@ async function getRseriesData(url, fileName) {
 
 async function getCsvData(url, fileName, splitChar) {
   var error = 0
-  var fType = null
   try{
     var request = await new Request(url).loadString()
   } catch (e) {
     error = -1
     log(e)
     log("using offline data: " + fileName)
-    let tmp = await loadData(fType, fileName)
+    let tmp = await loadData(fileType.csv, fileName)
     request = tmp.data
   }
   if (error >= 0){
