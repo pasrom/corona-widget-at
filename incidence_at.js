@@ -23,6 +23,12 @@ const widgetSizes = {
 
 const useLogarithmicScale = true
 
+/**
+ * request cache
+ * Map<string, any>
+ */
+const request_cache = new Map()
+
 class LineChart {
   // LineChart by https://kevinkub.de/
   constructor(width, height, seriesA, seriesB) {
@@ -223,7 +229,7 @@ async function getBkzNumber(url, location) {
   act_bkz = 0
   for (var i = 0; i < BKZData.length; i++) {
     if (BKZData[i].Bezirk === disctrict) {
-      act_bkz = BKZData[i].BKZ + "," + "📍" + BKZData[i].KFZ
+      act_bkz = BKZData[i].BKZ + "," + BKZData[i].KFZ
       break
     }
   }
@@ -284,7 +290,7 @@ async function createWidget(widgetSize) {
   parameter = BKZNr  + parameter
 
   const locations = parameter.split(";").map(parseLocation)
-  const states = "10,🇦🇹".split(";").map(parseLocation)
+  const states = "10, ".split(";").map(parseLocation)
 
   const timeline_gkz_lines = await getCsvData(urlTimelineGkz, "Timeline_GKZ", "\n")
   const timeline_lines = await getCsvData(urlTimeline, "Timeline", "\n")
@@ -311,8 +317,12 @@ async function createWidget(widgetSize) {
       data_timeline_new.push(data_timeline_2[k])
     }
   }
-  data_timeline_new.reverse()
+  const no_signal = list.addStack()
+  no_signal.layoutHorizontally()
+  const logo_so_signal = await getLogoFromUrl("https://icon-library.net/images/no-data-icon/no-data-icon-23.jpg")
+  //addImage(no_signal, logo_so_signal)
 
+  data_timeline_new.reverse()
   const infected_stack = list.addStack()
   infected_stack.layoutHorizontally()
 
@@ -340,11 +350,17 @@ async function createWidget(widgetSize) {
   }
   list.addSpacer(5)
 
+  const logo_location = await getLogoFromUrl("https://cdn3.iconfinder.com/data/icons/google-material-design-icons/48/ic_location_on_48px-512.png")
+  const logo_virus = await getLogoFromUrl("https://image.flaticon.com/icons/png/512/2585/2585189.png")
+
   // add stack for the 7 day incidence
   const stack_incidence = list.addStack()
   stack_incidence.layoutVertically()
   stack_incidence.useDefaultPadding()
-  const header = stack_incidence.addText("🦠 7-day-incidence")
+  const logo_virus_incidence = stack_incidence.addStack()
+  logo_virus_incidence.layoutHorizontally()
+  addImage(logo_virus_incidence, logo_virus)
+  const header = logo_virus_incidence.addText(" 7-day-incidence")
   header.font = Font.mediumSystemFont(11)
   stack_incidence.addSpacer(2)
   const stack_incidence_print = stack_incidence.addStack()
@@ -356,7 +372,10 @@ async function createWidget(widgetSize) {
   const stack_infected = list.addStack()
   stack_infected.setPadding(0, 0, 0, 0)
   stack_infected.layoutVertically()
-  const name = stack_infected.addText("🦠 active cases")
+  const logo_virus_infected = stack_incidence.addStack()
+  logo_virus_infected.layoutHorizontally()
+  addImage(logo_virus_infected, logo_virus)
+  const name = logo_virus_infected.addText(" active cases")
   name.font = Font.mediumSystemFont(11)
   stack_infected.addSpacer(2)
   const stack_infected_print = stack_infected.addStack()
@@ -364,10 +383,13 @@ async function createWidget(widgetSize) {
   stack_infected_print.useDefaultPadding()
   stack_infected.addSpacer(5)
 
+  const logo_austria = await getLogoFromUrl("https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Flag_of_Austria.svg/500px-Flag_of_Austria.svg.png")
+
   // show incidence for austria
-  printIncidence(stack_incidence_print, data_timeline[0], data_timeline[1])
+  await printIncidence(stack_incidence_print, data_timeline[0], data_timeline[1], logo_austria, 0, null)
   // show active cases for austria
-  printActiveCases(stack_infected_print, data_timeline[0], data_timeline[1])
+  await printActiveCases(stack_infected_print, data_timeline[0], data_timeline[1], logo_austria, 0, null)
+    stack_infected_print.addSpacer(2)
 
   // show incidence and active cases for given districts
   let ctr = 0
@@ -379,15 +401,15 @@ async function createWidget(widgetSize) {
     if (location["gkz"] > 10) {
       const data_timeline_gkz = calc(timeline_gkz_lines, location)
       const data_timeline_gkz_yesterday = calc(timeline_gkz_lines, location, 1)
-      printIncidence(stack_incidence_print, data_timeline_gkz, data_timeline_gkz_yesterday)
+      await printIncidence(stack_incidence_print, data_timeline_gkz, data_timeline_gkz_yesterday, logo_location, ctr)
       if (ctr === 0) {
-        printActiveCases(stack_infected_print, data_timeline_gkz, data_timeline_gkz_yesterday)
+        await printActiveCases(stack_infected_print, data_timeline_gkz, data_timeline_gkz_yesterday, logo_location, ctr)
       }
     } else {
       const data_timeline_loc = calc(timeline_lines, location)
       const data_timeline_loc_yesterday = calc(timeline_lines, location, 1)
-      printIncidence(stack_incidence_print, data_timeline_loc, data_timeline_loc_yesterday)
-      printActiveCases(stack_infected_print, data_timeline_loc, data_timeline_loc_yesterday)
+      await printIncidence(stack_incidence_print, data_timeline_loc, data_timeline_loc_yesterday, logo_location, ctr)
+      await printActiveCases(stack_infected_print, data_timeline_loc, data_timeline_loc_yesterday, logo_location, ctr)
     }
     ctr++
   }
@@ -418,11 +440,12 @@ async function createWidget(widgetSize) {
   return list
 }
 
-function printActiveCases(stack, data, data_yesterday) {
+async function printActiveCases(stack, data, data_yesterday, image = null, ctr = 1, color = "#ffffffff") {
   description = data["state_district"]
   const line = stack.addStack()
   line.setPadding(0, 0, 0, 0)
   line.layoutVertically()
+  //line.size = new Size(48,30)
   const label = line.addText(data["active_cases_sum"] + getTrendArrow(data_yesterday["active_cases_sum"], data["active_cases_sum"]))
   label.font = Font.boldSystemFont(11)
   label.textColor = Color.orange()
@@ -430,14 +453,19 @@ function printActiveCases(stack, data, data_yesterday) {
 
   stack.addSpacer(1)
 
-  const name = line.addText(description)
+  const test = line.addStack()
+  test.layoutHorizontally()
+  if (ctr == 0 && image != null) {
+    addImage(test, image, color)
+  }
+  const name = test.addText(description)
   name.minimumScaleFactor = 0.3
   name.font = Font.systemFont(10)
   name.lineLimit = 1
-  stack.addSpacer(2)
+  stack.addSpacer(1)
 }
 
-function printIncidence(stack, data, data_yesterday) {
+async function printIncidence(stack, data, data_yesterday, image = null, ctr = 1, color = "#ffffffff") {
   value = data["incidence_7_days"]
   description = data["state_district"]
   const line = stack.addStack()
@@ -457,7 +485,12 @@ function printIncidence(stack, data, data_yesterday) {
 
   stack.addSpacer(1)
 
-  const name = line.addText(description)
+  const test = line.addStack()
+  test.layoutHorizontally()
+  if (ctr == 0 && image != null) {
+    addImage(test, image, color)
+  }
+  const name = test.addText(description)
   name.minimumScaleFactor = 0.3
   name.font = Font.systemFont(10)
   name.lineLimit = 1
@@ -520,4 +553,30 @@ function getFilemanager() {
         fm = FileManager.local()
     }
     return fm
+}
+
+function addImage(stack, img, color = "#ffffffff") {
+        const image = stack.addImage(img)
+        image.imageSize = new Size(12, 12)
+        if(color != null) {
+          image.tintColor = new Color(color)
+        }
+        //image.applyFillingContentMode()
+        return image
+}
+
+/**
+ * Obtain logo images to reduce repeated image requests
+ * @param {string} url the map's address
+ * @return {Image} image
+ */
+async function getLogoFromUrl(url) {
+  if (request_cache.has(url)) {
+    return request_cache.get(url)
+  } else {
+    const request = new Request(url)
+    const image = await request.loadImage()
+    request_cache.set(url, image)
+    return image
+  }
 }
