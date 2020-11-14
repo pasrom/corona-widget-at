@@ -7,6 +7,16 @@
 // - Baumchen https://gist.github.com/Baumchen/6d91df0a4c76c45b15576db0632e4329
 //
 // No guarantee on correctness and completeness of the information provided.
+
+// user configuration
+const useLogarithmicScale = true
+const maxDaysDisplayed = {
+  small: 3,
+  medium: 7,
+  large: 7,
+}
+// user configuration end
+
 const urlTimelineGkz = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv"
 const urlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
 const urlRSeries = "https://docs.google.com/spreadsheets/u/0/d/e/2CAIWO3enVc9DPGVFb8mHr0Efql1cz6VeCLL7M4KkPm5YqvgQnDSomVM4zXE0OpN_MunJSTVbky3OAcKhPnA/gviz/chartiframe?oid=703654461"
@@ -21,7 +31,7 @@ const widgetSizes = {
   large: { width: 987, height: 1035 },
 }
 
-const useLogarithmicScale = true
+let mediumWidget = (config.widgetFamily === 'medium') ? true : false
 
 class LineChart {
   // LineChart by https://kevinkub.de/
@@ -153,7 +163,9 @@ let fmConfigDirectory = fm.joinPath(fm.documentsDirectory(), '/coronaWidget')
 if (!fm.isDirectory(fmConfigDirectory)) fm.createDirectory(fmConfigDirectory)
 
 const widgetSize = widgetSizes[config.widgetFamily] ?? widgetSizes.small
-let widget = await createWidget(widgetSize)
+const daysDisplayed = maxDaysDisplayed[config.widgetFamily] ?? maxDaysDisplayed.small
+
+let widget = await createWidget(widgetSize, daysDisplayed)
 if (!config.runsInWidget) {
   if (mediumWidget) {
       await widget.presentMedium()
@@ -270,7 +282,7 @@ async function getCsvData(url, fileName, splitChar) {
   return request.split(splitChar).reverse()
 }
 
-async function createWidget(widgetSize) {
+async function createWidget(widgetSize, daysDisplayed) {
   const list = new ListWidget()
   list.setPadding(10, 10, 0, 0)
   if (args.widgetParameter) {
@@ -296,7 +308,7 @@ async function createWidget(widgetSize) {
   const r_series = await getRseriesData(urlRSeries, "r-series")
 
   var data_timeline = []
-  for (var i = 0; i < 4; i++) {
+  for (var i = 0; i < daysDisplayed + 1; i++) {
     data_timeline.push(calc(timeline_lines, states[0], i))
   }
   var data_timeline_2 = []
@@ -320,7 +332,7 @@ async function createWidget(widgetSize) {
   const infected_stack = list.addStack()
   infected_stack.layoutHorizontally()
 
-  for (var i = 0; i < 3; i++) {
+  for (var i = 0; i < daysDisplayed; i++) {
     const text_cases = data_timeline_new[i]["cases_daily"] + " " + getTrendArrow(data_timeline_new[i + 1]["cases_daily"], data_timeline_new[i]["cases_daily"])
     const date_cases = ('0' + data_timeline_new[i]["date"].getDate()).slice(-2) + '.'
              + ('0' + (data_timeline_new[i]["date"].getMonth() + 1)).slice(-2) + '.'
