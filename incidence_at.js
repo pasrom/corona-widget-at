@@ -155,7 +155,11 @@ if (!fm.isDirectory(fmConfigDirectory)) fm.createDirectory(fmConfigDirectory)
 const widgetSize = widgetSizes[config.widgetFamily] ?? widgetSizes.small
 let widget = await createWidget(widgetSize)
 if (!config.runsInWidget) {
-  await widget.presentSmall()
+  if (mediumWidget) {
+      await widget.presentMedium()
+  } else {
+      await widget.presentSmall()
+  }
 }
 
 Script.setWidget(widget)
