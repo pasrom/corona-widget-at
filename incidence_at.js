@@ -396,7 +396,7 @@ async function createWidget(widgetSize, daysDisplayed) {
       const data_timeline_gkz = calc(timeline_gkz_lines, location)
       const data_timeline_gkz_yesterday = calc(timeline_gkz_lines, location, 1)
       printIncidence(stack_incidence_print, data_timeline_gkz, data_timeline_gkz_yesterday)
-      if (ctr === 0) {
+      if (ctr === 0 || mediumWidget) {
         printActiveCases(stack_infected_print, data_timeline_gkz, data_timeline_gkz_yesterday)
       }
     } else {
