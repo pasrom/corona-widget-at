@@ -284,7 +284,9 @@ async function getCsvData(url, fileName, splitChar) {
 
 async function createWidget(widgetSize, daysDisplayed) {
   const list = new ListWidget()
-  list.setPadding(10, 10, 0, 0)
+  list.setPadding(0, 0, 0, 0)
+  list.addSpacer()
+
   if (args.widgetParameter) {
     parameter = args.widgetParameter
   } else {
@@ -331,6 +333,8 @@ async function createWidget(widgetSize, daysDisplayed) {
 
   const infected_stack = list.addStack()
   infected_stack.layoutHorizontally()
+  infected_stack.setPadding(0, 0, 0, 0)
+  infected_stack.addSpacer()
 
   for (var i = 0; i < daysDisplayed; i++) {
     const text_cases = data_timeline_new[i]["cases_daily"] + " " + getTrendArrow(data_timeline_new[i + 1]["cases_daily"], data_timeline_new[i]["cases_daily"])
@@ -354,34 +358,14 @@ async function createWidget(widgetSize, daysDisplayed) {
     date_infected.centerAlignText()
     infected_stack.addSpacer()
   }
-  list.addSpacer(5)
-
-  // add stack for the 7 day incidence
-  const stack_incidence = list.addStack()
-  stack_incidence.layoutVertically()
-  stack_incidence.useDefaultPadding()
-  const header = stack_incidence.addText("🦠 7-day-incidence")
-  header.font = Font.mediumSystemFont(11)
-  stack_incidence.addSpacer(2)
-  const stack_incidence_print = stack_incidence.addStack()
-  stack_incidence_print.layoutHorizontally()
-  stack_incidence_print.useDefaultPadding()
-  stack_incidence.addSpacer(5)
-
-  // add stack for the active cases
-  const stack_infected = list.addStack()
-  stack_infected.setPadding(0, 0, 0, 0)
-  stack_infected.layoutVertically()
-  const name = stack_infected.addText("🦠 active cases")
-  name.font = Font.mediumSystemFont(11)
-  stack_infected.addSpacer(2)
-  const stack_infected_print = stack_infected.addStack()
-  stack_infected_print.layoutHorizontally()
-  stack_infected_print.useDefaultPadding()
-  stack_infected.addSpacer(5)
+  list.addSpacer()
+  
+  stack_incidence_print = createStackWithHeader(list, "🦠 7-day-incidence")
+  stack_infected_print = createStackWithHeader(list, "🦠 active cases")
 
   // show incidence for austria
   printIncidence(stack_incidence_print, data_timeline[0], data_timeline[1])
+
   // show active cases for austria
   printActiveCases(stack_infected_print, data_timeline[0], data_timeline[1])
 
@@ -407,7 +391,8 @@ async function createWidget(widgetSize, daysDisplayed) {
     }
     ctr++
   }
-  list.addSpacer()
+  stack_incidence_print.addSpacer()
+  stack_infected_print.addSpacer()
 
   let data = getTimeline(timeline_lines, states[0], 4).reverse()
   let sum_cases = getTimeline(timeline_lines, states[0], 6).reverse()
@@ -434,11 +419,38 @@ async function createWidget(widgetSize, daysDisplayed) {
   return list
 }
 
+function createStackWithHeader(list, header) {
+  const stack_outline = list.addStack()
+  stack_outline.setPadding(0, 0, 0, 0)
+  stack_outline.layoutHorizontally()
+  const stack = stack_outline.addStack()
+  stack.setPadding(0, 0, 0, 0)
+  stack.layoutVertically()
+  const header_stack = stack.addStack()
+  header_stack.layoutHorizontally()
+  header_stack.addSpacer()
+  const name = header_stack.addText(header)
+  name.font = Font.mediumSystemFont(11)
+  header_stack.addSpacer()
+  stack.addSpacer(2)
+  const stack_print = stack.addStack()
+  stack_print.layoutHorizontally()
+  stack_print.setPadding(0, 0, 0, 0)
+  stack_print.addSpacer()
+  list.addSpacer()
+  return stack_print
+}
+
 function printActiveCases(stack, data, data_yesterday) {
   description = data["state_district"]
-  const line = stack.addStack()
+
+  const stack_outline = stack.addStack()
+  stack_outline.setPadding(0, 0, 0, 0)
+  stack_outline.layoutVertically()
+
+  const line = stack_outline.addStack()
   line.setPadding(0, 0, 0, 0)
-  line.layoutVertically()
+  line.layoutHorizontally()
   const label = line.addText(data["active_cases_sum"] + getTrendArrow(data_yesterday["active_cases_sum"], data["active_cases_sum"]))
   label.font = Font.boldSystemFont(11)
   label.textColor = Color.orange()
@@ -446,7 +458,10 @@ function printActiveCases(stack, data, data_yesterday) {
 
   stack.addSpacer(1)
 
-  const name = line.addText(description)
+  const stack_text = stack_outline.addStack()
+  stack_text.setPadding(0, 0, 0, 0)
+  stack_text.layoutHorizontally()
+  const name = stack_text.addText(description)
   name.minimumScaleFactor = 0.3
   name.font = Font.systemFont(10)
   name.lineLimit = 1
@@ -456,9 +471,14 @@ function printActiveCases(stack, data, data_yesterday) {
 function printIncidence(stack, data, data_yesterday) {
   value = data["incidence_7_days"]
   description = data["state_district"]
-  const line = stack.addStack()
+
+  const stack_outline = stack.addStack()
+  stack_outline.setPadding(0, 0, 0, 0)
+  stack_outline.layoutVertically()
+
+  const line = stack_outline.addStack()
   line.setPadding(0, 0, 0, 0)
-  line.layoutVertically()
+  line.layoutHorizontally()
   const label = line.addText(String(value) + getTrendArrow(data_yesterday["incidence_7_days"], data["incidence_7_days"]))
   label.font = Font.boldSystemFont(11)
   label.centerAlignText()
@@ -473,7 +493,10 @@ function printIncidence(stack, data, data_yesterday) {
 
   stack.addSpacer(1)
 
-  const name = line.addText(description)
+  const stack_text = stack_outline.addStack()
+  stack_text.setPadding(0, 0, 0, 0)
+  stack_text.layoutHorizontally()
+  const name = stack_text.addText(description)
   name.minimumScaleFactor = 0.3
   name.font = Font.systemFont(10)
   name.lineLimit = 1
