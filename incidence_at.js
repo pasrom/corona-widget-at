@@ -321,7 +321,7 @@ async function createWidget(widgetSize) {
     const date_cases = ('0' + data_timeline_new[i]["date"].getDate()).slice(-2) + '.'
              + ('0' + (data_timeline_new[i]["date"].getMonth() + 1)).slice(-2) + '.'
              + data_timeline_new[i]["date"].getFullYear();
-    const text_date = `${data_timeline_new[i]["date"].getDate()}/${data_timeline_new[i]["date"].getMonth()}`
+    const text_date = `${data_timeline_new[i]["date"].getDate()}/${data_timeline_new[i]["date"].getMonth() + 1}`
     var text_r = "N/A"
     for (var j = 0; j < r_series.length; j++) {
       if (date_cases === r_series[j]["date"] && r_series[j]["name"] === "R") {
