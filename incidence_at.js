@@ -314,9 +314,9 @@ async function createWidget(widgetSize, daysDisplayed) {
     data_timeline.push(calc(timeline_lines, states[0], i))
   }
   var data_timeline_2 = []
-  for (var i = 0; i < 3; i++) {
-    data_timeline_2.push(calc(timeline2_lines, states[0], i))
-  }
+  //for (var i = 0; i < 3; i++) {
+  //  data_timeline_2.push(calc(timeline2_lines, states[0], i))
+  //}
 
   data_timeline_2.reverse()
   var data_timeline_new = [...data_timeline]
