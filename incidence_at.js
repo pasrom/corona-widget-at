@@ -252,14 +252,23 @@ async function getRseriesData(url, fileName) {
   var tmp = null
   var request = null
   try{
-    request = await new Request(url).loadString()
+    request = new Request(url);
+    request_str = await request.loadString()
   } catch (e) {
     error = -1
     log(e)
     log("using offline data: " + fileName)
   }
+  if (error >= 0 && request.response.statusCode != 200) {
+    error = -1
+    log("error " + request.response.statusCode + " getting " + url)
+  }
+  if (error >= 0 && request.response.mimeType != "text/html") {
+    error = -1
+    log("Wrong mimeType " + request.mimeType + " from url " + url)
+  }
   if (error >= 0){
-    tmp = getRSeries(request)
+    tmp = getRSeries(request_str)
     saveData(fileType.json, fileName, tmp)
   }
   var tmp2 = await loadData(fileType.json, fileName)
@@ -268,19 +277,32 @@ async function getRseriesData(url, fileName) {
 
 async function getCsvData(url, fileName, splitChar) {
   var error = 0
+  var request = null
+  var request_str = null
   try{
-    var request = await new Request(url).loadString()
+    request = new Request(url);
+    request_str = await request.loadString()
   } catch (e) {
     error = -1
     log(e)
-    log("using offline data: " + fileName)
-    let tmp = await loadData(fileType.csv, fileName)
-    request = tmp.data
+  }
+  if (error >= 0 && request.response.statusCode != 200) {
+    error = -1
+    log("error " + request.response.statusCode + " getting " + url)
+  }
+  if (error >= 0 && request.response.mimeType != "text/csv") {
+    error = -1
+    log("Wrong mimeType " + request.mimeType + " from url " + url)
   }
   if (error >= 0){
-    saveData(fileType.csv, fileName, request)
+    saveData(fileType.csv, fileName, request_str)
+  } else {
+    log("using offline data: " + fileName)
+    let tmp = await loadData(fileType.csv, fileName)
+    request_str = tmp.data
   }
-  return request.split(splitChar).reverse()
+
+  return request_str.split(splitChar).reverse()
 }
 
 async function createWidget(widgetSize, daysDisplayed) {
