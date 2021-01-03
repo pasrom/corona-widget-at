@@ -24,7 +24,7 @@ const urlRSeries = "https://docs.google.com/spreadsheets/u/0/d/e/2CAIWO3enVc9DPG
 const urlActTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMnBhOvoeZyV7UJSzTYD40Z4v4hG2JxJ2WH5jIHCWzBDzUOKsHQ1P1rVfgWt_WCgncMSsHvXThEULt/pub?gid=0&single=true&output=csv"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
-const jsonBKZData = "https://api.npoint.io/6b3942356a3ddcb584b3"
+const jsonBKZData = "https://api.npoint.io/8163b3aacafa8e541609"
 
 const widgetSizes = {
   small: { width: 465, height: 465 },
