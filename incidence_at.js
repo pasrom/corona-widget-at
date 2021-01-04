@@ -352,8 +352,7 @@ async function createWidget(widgetSize, daysDisplayed) {
   vaccinatons_stack.layoutHorizontally()
   vaccinatons_stack.setPadding(0, 0, 0, 0)
   vaccinatons_stack.addSpacer()
-  vaccinations_date = `${vaccinations_data["date"].getDate()}-${vaccinations_data["date"].getMonth() + 1}-${vaccinations_data["date"].getFullYear()}`
-  vaccinations_label = vaccinatons_stack.addText("💉 " + vaccinations_data["vaccinations"]) // + " (" + vaccinations_date + ")")
+  vaccinations_label = vaccinatons_stack.addText("🇦🇹 " + vaccinations_data["vaccinations"] + " 💉")
   vaccinations_label.font = Font.mediumSystemFont(10)
   vaccinatons_stack.addSpacer()
   list.addSpacer(5)
