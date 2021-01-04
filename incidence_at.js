@@ -237,14 +237,12 @@ async function getBkzNumber(url, location) {
   tmp = discrict_from_gps[0].display_name
   reg = /Bezirk (.*?),/
   disctrict = reg.exec(tmp)[1]
-  act_bkz = 0
   for (var i = 0; i < BKZData.length; i++) {
     if (BKZData[i].Bezirk === disctrict) {
-      act_bkz = BKZData[i].BKZ + "," + "📍" + BKZData[i].KFZ
-      break
+      return BKZData[i].BKZ + "," + "📍" + BKZData[i].KFZ
     }
   }
-  return act_bkz
+  throw "No district <" + disctrict + "> could be matched with the current position!"
 }
 
 async function getRseriesData(url, fileName) {
