@@ -290,7 +290,7 @@ async function getCsvData(url, fileName, splitChar) {
   }
   if (error >= 0 && request.response.mimeType != "text/csv") {
     error = -1
-    log("Wrong mimeType " + request.mimeType + " from url " + url)
+    log("Wrong mimeType " + request.response.mimeType + " from url " + url)
   }
   if (error >= 0){
     saveData(fileType.csv, fileName, request_str)
