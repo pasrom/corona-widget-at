@@ -313,6 +313,8 @@ async function createWidget(widgetSize, daysDisplayed) {
   } else {
     parameter = "802,B;8,Vbg."
   }
+  /* remove last ';' if one is present */
+  parameter = parameter.replace(/;\s*$/, "");
 
   try {
     BKZNr = await getBkzNumber(jsonBKZData) + ";"
