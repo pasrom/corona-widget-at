@@ -320,7 +320,7 @@ async function getCsvData(url, fileName, splitChar) {
 async function createWidget(widgetSize, daysDisplayed) {
   const list = new ListWidget()
   list.setPadding(0, 0, 0, 0)
-  list.addSpacer()
+  list.addSpacer(5)
 
   if (args.widgetParameter) {
     parameter = args.widgetParameter
@@ -356,7 +356,7 @@ async function createWidget(widgetSize, daysDisplayed) {
   vaccinations_label = vaccinatons_stack.addText("💉 " + vaccinations_data["vaccinations"]) // + " (" + vaccinations_date + ")")
   vaccinations_label.font = Font.mediumSystemFont(10)
   vaccinatons_stack.addSpacer()
-  list.addSpacer()
+  list.addSpacer(5)
 
   var data_timeline = []
   for (var i = 0; i < daysDisplayed + 1; i++) {
@@ -407,7 +407,7 @@ async function createWidget(widgetSize, daysDisplayed) {
     date_infected.centerAlignText()
     infected_stack.addSpacer()
   }
-  list.addSpacer()
+  list.addSpacer(5)
   
   stack_incidence_print = createStackWithHeader(list, "🦠 7-day-incidence")
   stack_infected_print = createStackWithHeader(list, "🦠 active cases")
@@ -486,7 +486,7 @@ function createStackWithHeader(list, header) {
   stack_print.layoutHorizontally()
   stack_print.setPadding(0, 0, 0, 0)
   stack_print.addSpacer()
-  list.addSpacer()
+  list.addSpacer(5)
   return stack_print
 }
 
