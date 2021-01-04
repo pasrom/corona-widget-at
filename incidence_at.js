@@ -22,6 +22,7 @@ const urlTimelineGkz = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timel
 const urlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
 const urlRSeries = "https://docs.google.com/spreadsheets/u/0/d/e/2CAIWO3enVc9DPGVFb8mHr0Efql1cz6VeCLL7M4KkPm5YqvgQnDSomVM4zXE0OpN_MunJSTVbky3OAcKhPnA/gviz/chartiframe?oid=703654461"
 const urlActTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMnBhOvoeZyV7UJSzTYD40Z4v4hG2JxJ2WH5jIHCWzBDzUOKsHQ1P1rVfgWt_WCgncMSsHvXThEULt/pub?gid=0&single=true&output=csv"
+const urlVaccinations = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/country_data/Austria.csv"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://api.npoint.io/8163b3aacafa8e541609"
@@ -145,6 +146,17 @@ function calc(data, location, nr = 0) {
   }
   return {
     error: "GKZ unbekannt.",
+  }
+}
+
+function getVaccinations(data) {
+  components = data[1].split(",")
+  var day = +components[1].substring(8,10)
+  var month = +components[1].substring(5,7)
+  var year = +components[1].substring(0,4)
+  return {
+    date: (new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))),
+    vaccinations: parseInt(components[3]),
   }
 }
 
@@ -288,7 +300,9 @@ async function getCsvData(url, fileName, splitChar) {
     error = -1
     log("error " + request.response.statusCode + " getting " + url)
   }
-  if (error >= 0 && request.response.mimeType != "text/csv") {
+  var re = /text\/csv|text\/plain/i;
+  var found = request.response.mimeType.match(re);
+  if (error >= 0 && !found) {
     error = -1
     log("Wrong mimeType " + request.response.mimeType + " from url " + url)
   }
@@ -331,6 +345,18 @@ async function createWidget(widgetSize, daysDisplayed) {
   const timeline_lines = await getCsvData(urlTimeline, "Timeline", "\n")
   const timeline2_lines = await getCsvData(urlActTimeline, "Timeline2", "\r\n")
   const r_series = await getRseriesData(urlRSeries, "r-series")
+  const vaccinations = await getCsvData(urlVaccinations, "Vaccinations", "\n")
+
+  vaccinations_data = getVaccinations(vaccinations)
+  const vaccinatons_stack = list.addStack()
+  vaccinatons_stack.layoutHorizontally()
+  vaccinatons_stack.setPadding(0, 0, 0, 0)
+  vaccinatons_stack.addSpacer()
+  vaccinations_date = `${vaccinations_data["date"].getDate()}-${vaccinations_data["date"].getMonth() + 1}-${vaccinations_data["date"].getFullYear()}`
+  vaccinations_label = vaccinatons_stack.addText("💉 " + vaccinations_data["vaccinations"]) // + " (" + vaccinations_date + ")")
+  vaccinations_label.font = Font.mediumSystemFont(10)
+  vaccinatons_stack.addSpacer()
+  list.addSpacer()
 
   var data_timeline = []
   for (var i = 0; i < daysDisplayed + 1; i++) {
