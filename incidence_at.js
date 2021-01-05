@@ -352,7 +352,8 @@ async function createWidget(widgetSize, daysDisplayed) {
   vaccinatons_stack.layoutHorizontally()
   vaccinatons_stack.setPadding(0, 0, 0, 0)
   vaccinatons_stack.addSpacer()
-  vaccinations_label = vaccinatons_stack.addText("🇦🇹 " + vaccinations_data["vaccinations"] + " 💉")
+      vaccinations_per_100 = vaccinations_data["vaccinations"] * 100 / 8901064
+    vaccinations_label = vaccinatons_stack.addText("🇦🇹 " + vaccinations_data["vaccinations"] + " | " + vaccinations_per_100.toFixed(2) + " 💉")
   vaccinations_label.font = Font.mediumSystemFont(10)
   vaccinatons_stack.addSpacer()
   list.addSpacer(5)
