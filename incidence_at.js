@@ -7,7 +7,7 @@
 // - Baumchen https://gist.github.com/Baumchen/6d91df0a4c76c45b15576db0632e4329
 //
 // No guarantee on correctness and completeness of the information provided.
-// Version 0.1.1
+// Version 0.1.2
 
 // user configuration
 const useLogarithmicScale = true
