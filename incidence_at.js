@@ -301,8 +301,7 @@ async function getCsvData(url, fileName, splitChar) {
     log("error " + request.response.statusCode + " getting " + url)
   }
   var re = /text\/csv|text\/plain/i;
-  var found = request.response.mimeType.match(re);
-  if (error >= 0 && !found) {
+  if (error >= 0 && !request.response.mimeType.match(re)) {
     error = -1
     log("Wrong mimeType " + request.response.mimeType + " from url " + url)
   }
