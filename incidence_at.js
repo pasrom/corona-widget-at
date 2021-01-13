@@ -156,7 +156,7 @@ function getVaccinations(data) {
   var year = +components[1].substring(0,4)
   return {
     date: (new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))),
-    vaccinations: parseInt(components[3]),
+    vaccinations: parseInt(components[4]),
   }
 }
 
