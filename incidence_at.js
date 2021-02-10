@@ -153,13 +153,14 @@ function calc(data, location, nr = 0) {
 }
 
 function getVaccinations(data) {
-  components = data[1].split(",")
+  regex = /(?:,|\n|^)("(?:(?:"")*[^"]*)*"|[^",\n]*|(?:\n|$))/g
+  components = getRegexedData(data[1], regex, 1)
   var day = +components[1].substring(8,10)
   var month = +components[1].substring(5,7)
   var year = +components[1].substring(0,4)
   return {
     date: (new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))),
-    vaccinations: parseInt(components[4]),
+    vaccinations: parseInt(components[5]),
   }
 }
 
