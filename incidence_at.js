@@ -10,7 +10,7 @@
 // - Baumchen https://gist.github.com/Baumchen/6d91df0a4c76c45b15576db0632e4329
 //
 // No guarantee on correctness and completeness of the information provided.
-// Version 0.1.3
+// Version 0.1.4
 
 // user configuration
 const useLogarithmicScale = true
@@ -25,7 +25,7 @@ const urlTimelineGkz = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timel
 const urlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
 const urlRSeries = "https://docs.google.com/spreadsheets/u/0/d/e/2CAIWO3enVc9DPGVFb8mHr0Efql1cz6VeCLL7M4KkPm5YqvgQnDSomVM4zXE0OpN_MunJSTVbky3OAcKhPnA/gviz/chartiframe?oid=703654461"
 const urlActTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMnBhOvoeZyV7UJSzTYD40Z4v4hG2JxJ2WH5jIHCWzBDzUOKsHQ1P1rVfgWt_WCgncMSsHvXThEULt/pub?gid=0&single=true&output=csv"
-const urlVaccinations = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/country_data/Austria.csv"
+const urlVaccinations = "https://info.gesundheitsministerium.gv.at/data/timeline-eimpfpass.csv"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://api.npoint.io/8163b3aacafa8e541609"
@@ -152,15 +152,38 @@ function calc(data, location, nr = 0) {
   }
 }
 
-function getVaccinations(data) {
-  regex = /(?:,|\n|^)("(?:(?:"")*[^"]*)*"|[^",\n]*|(?:\n|$))/g
-  components = getRegexedData(data[1], regex, 1)
-  var day = +components[1].substring(8,10)
-  var month = +components[1].substring(5,7)
-  var year = +components[1].substring(0,4)
+function getVaccinations(data, location, nr = 0) {
+  ctr = 0
+  for (line of data) {
+    var components = null
+    if(line.search(";") >= 0) {
+      components = line.split(";")
+    } else {
+      components = line.split(",")
+    }
+    if (components[1] === location["gkz"]) {
+      if (nr === ctr) {
+        var day = +components[0].substring(8,10)
+        var month = +components[0].substring(5,7)
+        var year = +components[0].substring(0,4)
+        return {
+          date: (new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))),
+          state_district: location["name"] ? location["name"] : components[3],
+          id: parseInt(components[1]),
+          residents: parseInt(components[2]),
+          registered_vaccinations: parseInt(components[4]),
+          registered_vaccinations_100: parseFloat(components[5]),
+          partly_vaccinated: parseInt(components[6]),
+          partly_vaccinated_100: parseFloat(components[7]),
+          fully_immunized: parseInt(components[8]),
+          fully_immunized_100: parseFloat(components[9]),
+        }
+      }
+      ctr++
+    }
+  }
   return {
-    date: (new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))),
-    vaccinations: parseInt(components[5]),
+    error: "GKZ unbekannt.",
   }
 }
 
@@ -348,15 +371,15 @@ async function createWidget(widgetSize, daysDisplayed) {
   const timeline_lines = await getCsvData(urlTimeline, "Timeline", "\n")
   const timeline2_lines = await getCsvData(urlActTimeline, "Timeline2", "\r\n")
   const r_series = await getRseriesData(urlRSeries, "r-series")
-  const vaccinations = await getCsvData(urlVaccinations, "Vaccinations", "\n")
+  const vaccinations = await getCsvData(urlVaccinations, "Vaccinations", "\r\n")
 
-  vaccinations_data = getVaccinations(vaccinations)
+  vaccinations_data = getVaccinations(vaccinations, states[0])
+
   const vaccinatons_stack = list.addStack()
   vaccinatons_stack.layoutHorizontally()
   vaccinatons_stack.setPadding(0, 0, 0, 0)
   vaccinatons_stack.addSpacer()
-      vaccinations_per_100 = vaccinations_data["vaccinations"] * 100 / 8901064
-    vaccinations_label = vaccinatons_stack.addText("🇦🇹 " + vaccinations_data["vaccinations"] + " | " + vaccinations_per_100.toFixed(2) + " 💉")
+  vaccinations_label = vaccinatons_stack.addText("🇦🇹 " + vaccinations_data["registered_vaccinations"] + " | " + vaccinations_data["registered_vaccinations_100"].toFixed(2) + " 💉")
   vaccinations_label.font = Font.mediumSystemFont(10)
   vaccinatons_stack.addSpacer()
   list.addSpacer(5)
