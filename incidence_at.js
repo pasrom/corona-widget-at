@@ -345,6 +345,8 @@ async function getCsvData(url, fileName, splitChar) {
 
 async function createWidget(widgetSize, daysDisplayed) {
   const list = new ListWidget()
+  let nextRefresh = Date.now() + 1000*30*60 // 30 min refresch rate
+  list.refreshAfterDate = new Date(nextRefresh)
   list.setPadding(0, 0, 0, 0)
   list.addSpacer(5)
 
