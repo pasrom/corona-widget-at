@@ -172,7 +172,7 @@ function getVaccinations(data, location, nr = 0) {
           id: parseInt(components[1]),
           residents: parseInt(components[2]),
           registered_vaccinations: parseInt(components[4]),
-          registered_vaccinations_100: parseFloat(components[5]),
+          registered_vaccinations_100: parseFloat(components[9]),
           partly_vaccinated: parseInt(components[6]),
           partly_vaccinated_100: parseFloat(components[7]),
           fully_immunized: parseInt(components[8]),
