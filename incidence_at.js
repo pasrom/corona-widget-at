@@ -21,8 +21,9 @@ const maxDaysDisplayed = {
 }
 // user configuration end
 
-const urlTimelineGkz = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline_GKZ.csv"
-const urlTimeline = "https://covid19-dashboard.ages.at/data/CovidFaelle_Timeline.csv"
+const urlTimelineAustria = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=344127261&single=true&output=csv"
+const urlTimelineGkz = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=712549080&single=true&output=csv"
+const urlTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=0&single=true&output=csv"
 const urlRSeries = "https://docs.google.com/spreadsheets/u/0/d/e/2CAIWO3enVc9DPGVFb8mHr0Efql1cz6VeCLL7M4KkPm5YqvgQnDSomVM4zXE0OpN_MunJSTVbky3OAcKhPnA/gviz/chartiframe?oid=703654461"
 const urlActTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMnBhOvoeZyV7UJSzTYD40Z4v4hG2JxJ2WH5jIHCWzBDzUOKsHQ1P1rVfgWt_WCgncMSsHvXThEULt/pub?gid=0&single=true&output=csv"
 const urlVaccinations = "https://info.gesundheitsministerium.gv.at/data/timeline-eimpfpass.csv"
@@ -136,7 +137,7 @@ function calc(data, location, nr = 0) {
           cases_daily: parseInt(components[4]),
           cases_sum: parseInt(components[5]),
           cases_7_days: parseInt(components[6]),
-          incidence_7_days: parseInt(components[7]),
+          incidence_7_days: parseInt(components[7].split('\"').pop().split('\"')[0]),
           deaths_daily: parseInt(components[8]),
           deaths_sum: parseInt(components[9]),
           cured_daily: parseInt(components[10]),
@@ -190,7 +191,8 @@ function getVaccinations(data, location, nr = 0) {
 function getTimeline(data, location, nr) {
   var timeline = []
   for (line of data) {
-    const components = line.split(";")
+    line = line.replaceAll('\r', '')
+    const components = line.split(",")
     if (components[2] === location["gkz"]) {
       timeline.push(parseFloat(components[nr]))
     }
@@ -371,6 +373,7 @@ async function createWidget(widgetSize, daysDisplayed) {
 
   const timeline_gkz_lines = await getCsvData(urlTimelineGkz, "Timeline_GKZ", "\n")
   const timeline_lines = await getCsvData(urlTimeline, "Timeline", "\n")
+  const timeline_austria_lines = await getCsvData(urlTimelineAustria, "Timeline_Austria", "\n")
   const timeline2_lines = await getCsvData(urlActTimeline, "Timeline2", "\r\n")
   const r_series = await getRseriesData(urlRSeries, "r-series")
   const vaccinations = await getCsvData(urlVaccinations, "Vaccinations", "\r\n")
@@ -471,9 +474,9 @@ async function createWidget(widgetSize, daysDisplayed) {
   stack_incidence_print.addSpacer()
   stack_infected_print.addSpacer()
 
-  let data = getTimeline(timeline_lines, states[0], 4).reverse()
-  let sum_cases = getTimeline(timeline_lines, states[0], 6).reverse()
-  let sum_cured = getTimeline(timeline_lines, states[0], 12).reverse()
+  let data = getTimeline(timeline_austria_lines, states[0], 4).reverse()
+  let sum_cases = getTimeline(timeline_austria_lines, states[0], 6).reverse()
+  let sum_cured = getTimeline(timeline_austria_lines, states[0], 12).reverse()
   let infected = sum_cases.filter(x => !sum_cured.includes(x));
   
   if (useLogarithmicScale) {
