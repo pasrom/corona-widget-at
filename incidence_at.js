@@ -235,49 +235,6 @@ if (!config.runsInWidget) {
 Script.setWidget(widget)
 Script.complete()
 
-function getRegexedData(text, regex, nr) {
-  var matched = []
-  var matches = text.matchAll(regex)
-  for (match of matches) {
-    matched.push(match[nr])
-  }
-  return matched
-}
-
-function datePadding(string) {
-  if (string.length === 1) {
-    return "0" + string
-  } else {
-    return string
-  }
-}
-
-function getRSeries(data) {
-  const regex = /('chartJson': )(.*?)(', ')/gm;
-  const regex_values = /(x22:)(\d+\.\d+)/gm;
-  const regex_date = /(Date)\((\d\d\d\d,\d{1,2},\d{1,2})(\))/gm;
-  matched_data = getRegexedData(data, regex, 2)
-  matched_values = (getRegexedData(matched_data[0], regex_values, 2)).reverse()
-  matched_date = (getRegexedData(matched_data[0], regex_date, 2)).reverse()
-  r_series = []
-  // save last 7 dayes
-  let max = 7
-  if (max > matched_values.length) {
-    max = matched_values.length
-  }
-  for (var i = 0; i <= max - 1; i++) {
-    let date = matched_date[i].split(",")
-    date = datePadding(date[2]) + "." + datePadding(String(parseInt(date[1]) + 1)) + "." + date[0]
-    tmp = {
-      name: "R",
-      value: parseFloat(matched_values[i]).toFixed(2),
-      date: date,
-    }
-    r_series.push(tmp)
-  }
-  return r_series
-}
-
 async function getLocation() {
   try {
     Location.setAccuracyToThreeKilometers()
@@ -300,34 +257,6 @@ async function getBkzNumber(url, location) {
     }
   }
   throw "No district <" + disctrict + "> could be matched with the current position!"
-}
-
-async function getRseriesData(url, fileName) {
-  error = 0
-  var tmp = null
-  var request = null
-  try{
-    request = new Request(url);
-    request_str = await request.loadString()
-  } catch (e) {
-    error = -1
-    log(e)
-    log("using offline data: " + fileName)
-  }
-  if (error >= 0 && request.response.statusCode != 200) {
-    error = -1
-    log("error " + request.response.statusCode + " getting " + url)
-  }
-  if (error >= 0 && request.response.mimeType != "text/html") {
-    error = -1
-    log("Wrong mimeType " + request.mimeType + " from url " + url)
-  }
-  if (error >= 0){
-    tmp = getRSeries(request_str)
-    saveData(fileType.json, fileName, tmp)
-  }
-  var tmp2 = await loadData(fileType.json, fileName)
-  return tmp2.data
 }
 
 async function getCsvData(url, fileName, splitChar) {
