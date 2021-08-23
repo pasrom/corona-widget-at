@@ -24,7 +24,7 @@ const maxDaysDisplayed = {
 const urlTimelineAustria = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=344127261&single=true&output=csv"
 const urlTimelineGkz = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=712549080&single=true&output=csv"
 const urlTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=0&single=true&output=csv"
-const urlRSeries = "https://docs.google.com/spreadsheets/u/0/d/e/2CAIWO3enVc9DPGVFb8mHr0Efql1cz6VeCLL7M4KkPm5YqvgQnDSomVM4zXE0OpN_MunJSTVbky3OAcKhPnA/gviz/chartiframe?oid=703654461"
+const urlRSeries = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=776589868&single=true&output=csv"
 const urlActTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMnBhOvoeZyV7UJSzTYD40Z4v4hG2JxJ2WH5jIHCWzBDzUOKsHQ1P1rVfgWt_WCgncMSsHvXThEULt/pub?gid=0&single=true&output=csv"
 const urlVaccinations = "https://info.gesundheitsministerium.gv.at/data/timeline-eimpfpass.csv"
 
@@ -151,6 +151,22 @@ function calc(data, location, nr = 0) {
   return {
     error: "GKZ unbekannt.",
   }
+}
+
+function calcR(data, nr = 0) {
+    var components = null
+    if(data[nr].search(";") >= 0) {
+      components = data[nr].split(";")
+    } else {
+      components = data[nr].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+    }
+    var day = +components[0].substring(8,10)
+    var month = +components[0].substring(5,7)
+    var year = +components[0].substring(0,4)
+    return {
+      date: (new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))),
+      r_value: parseFloat(components[1].replace(',', '.').replaceAll('"', '')),
+    }
 }
 
 function getVaccinations(data, location, nr = 0) {
@@ -375,7 +391,7 @@ async function createWidget(widgetSize, daysDisplayed) {
   const timeline_lines = await getCsvData(urlTimeline, "Timeline", "\n")
   const timeline_austria_lines = await getCsvData(urlTimelineAustria, "Timeline_Austria", "\n")
   const timeline2_lines = await getCsvData(urlActTimeline, "Timeline2", "\r\n")
-  const r_series = await getRseriesData(urlRSeries, "r-series")
+  const r_series = await getCsvData(urlRSeries, "r-series", "\r\n")
   const vaccinations = await getCsvData(urlVaccinations, "Vaccinations", "\r\n")
 
   vaccinations_data = getVaccinations(vaccinations, states[0])
@@ -416,6 +432,7 @@ async function createWidget(widgetSize, daysDisplayed) {
   infected_stack.setPadding(0, 0, 0, 0)
   infected_stack.addSpacer()
 
+  var temp = []
   for (var i = 0; i < daysDisplayed; i++) {
     const text_cases = data_timeline_new[i]["cases_daily"] + " " + getTrendArrow(data_timeline_new[i + 1]["cases_daily"], data_timeline_new[i]["cases_daily"])
     const date_cases = ('0' + data_timeline_new[i]["date"].getDate()).slice(-2) + '.'
@@ -423,9 +440,13 @@ async function createWidget(widgetSize, daysDisplayed) {
              + data_timeline_new[i]["date"].getFullYear();
     const text_date = `${data_timeline_new[i]["date"].getDate()}/${data_timeline_new[i]["date"].getMonth() + 1}`
     var text_r = "N/A"
-    for (var j = 0; j < r_series.length; j++) {
-      if (date_cases === r_series[j]["date"] && r_series[j]["name"] === "R") {
-        text_r = r_series[j]["value"]
+    temp.push(calcR(r_series, i))
+    for (var j = 0; j < temp.length; j++) {
+      date_cases_r = ('0' + temp[j]["date"].getDate()).slice(-2) + '.'
+        + ('0' + (temp[j]["date"].getMonth() + 1)).slice(-2) + '.'
+        + temp[j]["date"].getFullYear();
+      if (date_cases === date_cases_r) {
+        text_r = String(temp[j]["r_value"].toFixed(2))
         break
       }
     }
