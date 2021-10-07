@@ -121,7 +121,7 @@ function calc(data, location, nr = 0) {
     if(line.search(";") >= 0) {
       components = line.split(";")
     } else {
-      components = line.split(",")
+      components = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
     }
     if (components[2] === location["gkz"]) {
       if (nr === ctr) {
@@ -136,7 +136,7 @@ function calc(data, location, nr = 0) {
           cases_daily: parseInt(components[4]),
           cases_sum: parseInt(components[5]),
           cases_7_days: parseInt(components[6]),
-          incidence_7_days: parseInt(components[7].split('\"').pop().split('\"')[0]),
+          incidence_7_days: parseInt(components[7].split('\"')[1]),
           deaths_daily: parseInt(components[8]),
           deaths_sum: parseInt(components[9]),
           cured_daily: parseInt(components[10]),
