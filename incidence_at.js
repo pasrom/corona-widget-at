@@ -342,21 +342,20 @@ async function createWidget(widgetSize, daysDisplayed) {
   infected_stack.setPadding(0, 0, 0, 0)
   infected_stack.addSpacer()
 
-  var temp = []
-  for (var i = 0; i < daysDisplayed; i++) {
+  for (var i = daysDisplayed-1; i >= 0 ; i--) {
     const text_cases = data_timeline[i]["cases_daily"] + " " + getTrendArrow(data_timeline[i + 1]["cases_daily"], data_timeline[i]["cases_daily"])
     const date_cases = ('0' + data_timeline[i]["date"].getDate()).slice(-2) + '.'
              + ('0' + (data_timeline[i]["date"].getMonth() + 1)).slice(-2) + '.'
              + data_timeline[i]["date"].getFullYear();
     const text_date = `${data_timeline[i]["date"].getDate()}/${data_timeline[i]["date"].getMonth() + 1}`
     var text_r = "N/A"
-    temp.push(calcR(r_series, i))
-    for (var j = 0; j < temp.length; j++) {
-      date_cases_r = ('0' + temp[j]["date"].getDate()).slice(-2) + '.'
-        + ('0' + (temp[j]["date"].getMonth() + 1)).slice(-2) + '.'
-        + temp[j]["date"].getFullYear();
+    for (var j = 0; j < r_series.length; j++) {
+      r_value = calcR(r_series, j)
+      date_cases_r = ('0' + r_value["date"].getDate()).slice(-2) + '.'
+        + ('0' + (r_value["date"].getMonth() + 1)).slice(-2) + '.'
+        + r_value["date"].getFullYear();
       if (date_cases === date_cases_r) {
-        text_r = String(temp[j]["r_value"].toFixed(2))
+        text_r = String(r_value["r_value"].toFixed(2))
         break
       }
     }
