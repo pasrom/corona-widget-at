@@ -1,7 +1,7 @@
 ![](doc/widget_small.png)![](doc/widget_medium.png)
 
 # Description
-The COVID-19 widget shows in the first line the sum of the vaccinated people, in the second line the last three days of new cases and the associated R-value for Austria. The incidence for Austria, the district where your device is located and the districts specified by the user are displayed on the third line. The active cases in Austria are displayed in the fourth line. Furthermore, the active cases (narrow white line) and the daily new cases (gray filled area) are shown in the background. The widget supports offline caching (local and iCloud).
+The COVID-19 widget shows in the first line the sum of the vaccinated people, in the second line the last three days of new cases, the daily deaths and the associated R-value for Austria. The hospitalization, ICU and the sum of deaths are shown below. The active cases in Austria are displayed on the second line from the bottom. The incidence for Austria, the district where your device is located and the districts specified by the user are displayed above. Furthermore, the active cases (narrow white line) and the daily new cases (gray filled area) are shown in the background. The widget supports offline caching (local and iCloud).
 ![Screenshot](doc/widget_description.png)
 
 # Setup
