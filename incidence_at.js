@@ -361,9 +361,11 @@ async function createWidget(widgetSize, daysDisplayed) {
         break
       }
     }
+    text_deaths = data_timeline[i]["deaths_daily"]
     const date_infected = infected_stack.addText(
       text_date + "\n" +
       text_cases + "\n" +
+      text_deaths + "\n" +
       text_r
     )
     date_infected.font = Font.mediumSystemFont(10)
