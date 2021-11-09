@@ -369,40 +369,31 @@ async function createWidget(widgetSize, daysDisplayed) {
     infected_stack.addSpacer()
   }
   list.addSpacer(5)
+
+
+  const stack_values = list.addStack()
+  stack_values.setPadding(0, 0, 0, 0)
+  stack_values.layoutHorizontally()
+  stack_values.addSpacer()
   
-  stack_incidence_print = createStackWithHeader(list, "🦠 7-day-incidence")
-  stack_infected_print = createStackWithHeader(list, "🦠 active cases")
+  // print incidence and active cases
+  printCoronaValues(stack_values, data_timeline[0], data_timeline[1])
 
-  // show incidence for austria
-  printIncidence(stack_incidence_print, data_timeline[0], data_timeline[1])
-
-  // show active cases for austria
-  printActiveCases(stack_infected_print, data_timeline[0], data_timeline[1])
-
-  // show incidence and active cases for given districts
-  let ctr = 0
+  ctr = 0
   for (location of locations) {
-    // do not print if it's the same as the actual location
     if (locations[0]["gkz"] === location["gkz"] && ctr != 0) {
       continue
     }
     if (location["gkz"] > 10) {
-      const data_timeline_gkz = calc(timeline_gkz_lines, location)
-      const data_timeline_gkz_yesterday = calc(timeline_gkz_lines, location, 1)
-      printIncidence(stack_incidence_print, data_timeline_gkz, data_timeline_gkz_yesterday)
-      if (ctr === 0 || mediumWidget) {
-        printActiveCases(stack_infected_print, data_timeline_gkz, data_timeline_gkz_yesterday)
-      }
+      var data_time_line = timeline_gkz_lines
     } else {
-      const data_timeline_loc = calc(timeline_lines, location)
-      const data_timeline_loc_yesterday = calc(timeline_lines, location, 1)
-      printIncidence(stack_incidence_print, data_timeline_loc, data_timeline_loc_yesterday)
-      printActiveCases(stack_infected_print, data_timeline_loc, data_timeline_loc_yesterday)
+      var data_time_line = timeline_lines
     }
+    const data = calc(data_time_line, location)
+    const data_yesterday = calc(data_time_line, location, 1)
+    printCoronaValues(stack_values, data, data_yesterday)
     ctr++
   }
-  stack_incidence_print.addSpacer()
-  stack_infected_print.addSpacer()
 
   let data = getTimeline(timeline_austria_lines, states[0], 4).reverse()
   let sum_cases = getTimeline(timeline_austria_lines, states[0], 6).reverse()
@@ -427,6 +418,45 @@ async function createWidget(widgetSize, daysDisplayed) {
   list.backgroundImage = chart
 
   return list
+}
+
+function getColor(value) {
+  if (value >= 50) {
+    return Color.red()
+  } else if (value >= 35) {
+    return Color.orange()
+  } else {
+    return Color.green()
+  }
+}
+
+function printCoronaValues(stack, data, data_yesterday) {
+  const corona_value = [{
+    color: null,
+    text: data["state_district"],
+  },{
+    color: getColor(data["incidence_7_days"]),
+    text: String(data["incidence_7_days"]) + getTrendArrow(data_yesterday["incidence_7_days"], data["incidence_7_days"]),
+  },{
+    color: getColor(data["incidence_7_days"]),
+    text: String(data["active_cases_sum"]) + getTrendArrow(data_yesterday["active_cases_sum"], data["active_cases_sum"]),
+  }]
+  const line = stack.addStack()
+  line.layoutVertically()
+  stack.addSpacer()
+  corona_value.forEach(function (value) {
+    const text_line = line.addStack()
+    line.layoutVertically()
+    const label = text_line.addText(value.text)
+    if(value.color != null) {
+      label.font = Font.boldSystemFont(10)
+      label.textColor = value.color;
+    } else {
+      label.font = Font.systemFont(10)
+    }
+    label.lineLimit = 1
+    label.minimumScaleFactor = 0.3
+  });
 }
 
 function createStackWithHeader(list, header) {
