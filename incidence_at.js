@@ -374,6 +374,14 @@ async function createWidget(widgetSize, daysDisplayed) {
   }
   list.addSpacer(5)
 
+  const icu_stack = list.addStack()
+  icu_stack.layoutHorizontally()
+  icu_stack.setPadding(0, 0, 0, 0)
+  icu_stack.addSpacer()
+  vaccinations_label = icu_stack.addText("🏥 " + data_timeline[0]["hospitalization"] + " | " + data_timeline[0]["icu"] + " | " + data_timeline[0]["deaths_sum"])
+  vaccinations_label.font = Font.mediumSystemFont(10)
+  icu_stack.addSpacer()
+  list.addSpacer(5)
 
   const stack_values = list.addStack()
   stack_values.setPadding(0, 0, 0, 0)
