@@ -142,6 +142,8 @@ function calc(data, location, nr = 0) {
           cured_daily: parseInt(components[10]),
           cured_sum: parseInt(components[11]),
           active_cases_sum: parseInt(components[5]) - parseInt(components[11]) - parseInt(components[9]),
+          hospitalization: parseInt(components[12]),
+          icu: parseInt(components[13]),
         }
       }
       ctr++
