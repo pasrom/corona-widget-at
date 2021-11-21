@@ -345,7 +345,7 @@ async function createWidget(widgetSize, daysDisplayed) {
   infected_stack.addSpacer()
 
   for (var i = daysDisplayed-1; i >= 0 ; i--) {
-    const text_cases = data_timeline[i]["cases_daily"] + " " + getTrendArrow(data_timeline[i + 1]["cases_daily"], data_timeline[i]["cases_daily"])
+    const text_cases = data_timeline[i]["cases_daily"]
     const date_cases = ('0' + data_timeline[i]["date"].getDate()).slice(-2) + '.'
              + ('0' + (data_timeline[i]["date"].getMonth() + 1)).slice(-2) + '.'
              + data_timeline[i]["date"].getFullYear();
