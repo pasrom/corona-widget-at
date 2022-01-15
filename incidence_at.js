@@ -10,7 +10,7 @@
 // - Baumchen https://gist.github.com/Baumchen/6d91df0a4c76c45b15576db0632e4329
 //
 // No guarantee on correctness and completeness of the information provided.
-// Version 0.2.0
+// Version 0.3.0
 
 // user configuration
 const useLogarithmicScale = true
@@ -25,7 +25,7 @@ const urlTimelineAustria = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQld
 const urlTimelineGkz = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=712549080&single=true&output=csv"
 const urlTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=0&single=true&output=csv"
 const urlRSeries = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=776589868&single=true&output=csv"
-const urlVaccinations = "https://info.gesundheitsministerium.gv.at/data/timeline-eimpfpass.csv"
+const urlVaccinations = "https://info.gesundheitsministerium.gv.at/data/COVID19_vaccination_certificates.csv"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://api.npoint.io/8163b3aacafa8e541609"
@@ -179,22 +179,20 @@ function getVaccinations(data, location, nr = 0) {
     } else {
       components = line.split(",")
     }
-    if (components[1] === location["gkz"]) {
+    if (components[1] === location["gkz"] && components[3] === "All") {
       if (nr === ctr) {
         var day = +components[0].substring(8,10)
         var month = +components[0].substring(5,7)
         var year = +components[0].substring(0,4)
         return {
           date: (new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0))),
-          state_district: location["name"] ? location["name"] : components[3],
-          id: parseInt(components[1]),
-          residents: parseInt(components[2]),
-          registered_vaccinations: parseInt(components[4]),
-          registered_vaccinations_100: parseFloat(components[9]),
-          partly_vaccinated: parseInt(components[6]),
-          partly_vaccinated_100: parseFloat(components[7]),
-          fully_immunized: parseInt(components[8]),
-          fully_immunized_100: parseFloat(components[9]),
+          state_id: components[1],
+          state_name: location["name"] ? location["name"] : components[2],
+          age_group: parseInt(components[3]),
+          gender: parseInt(components[4]),
+          population: parseFloat(components[5]),
+          valid_certificates: parseInt(components[6]),
+          valid_certificates_percent: parseFloat(components[7]),
         }
       }
       ctr++
@@ -329,7 +327,7 @@ async function createWidget(widgetSize, daysDisplayed) {
   vaccinatons_stack.layoutHorizontally()
   vaccinatons_stack.setPadding(0, 0, 0, 0)
   vaccinatons_stack.addSpacer()
-  vaccinations_label = vaccinatons_stack.addText("🇦🇹 " + vaccinations_data["fully_immunized"] + " | " + vaccinations_data["fully_immunized_100"].toFixed(2) + " 💉")
+  vaccinations_label = vaccinatons_stack.addText("🇦🇹 " + vaccinations_data["valid_certificates"] + " | " + vaccinations_data["valid_certificates_percent"].toFixed(2) + " 💉")
   vaccinations_label.font = Font.mediumSystemFont(10)
   vaccinatons_stack.addSpacer()
   list.addSpacer(5)
