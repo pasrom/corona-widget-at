@@ -22,4 +22,4 @@ The COVID-19 widget shows in the first line the sum of the vaccinated people, in
 * https://covid19-dashboard.ages.at
 * https://sites.google.com/view/corona-at/startseite
 * https://www.sozialministerium.at/Informationen-zum-Coronavirus/Neuartiges-Coronavirus-(2019-nCov).html
-* https://info.gesundheitsministerium.gv.at/data/timeline-eimpfpass.csv
+* https://info.gesundheitsministerium.gv.at/data/COVID19_vaccination_certificates.csv
