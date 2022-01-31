@@ -28,7 +28,7 @@ const urlRSeries = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsf
 const urlVaccinations = "https://info.gesundheitsministerium.gv.at/data/COVID19_vaccination_certificates.csv"
 
 const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
-const jsonBKZData = "https://api.npoint.io/8163b3aacafa8e541609"
+const jsonBKZData = "https://gist.githubusercontent.com/pasrom/8b1c9d5def267f5abee45073a153b36a/raw/districts.json"
 
 const widgetSizes = {
   small: { width: 465, height: 465 },
