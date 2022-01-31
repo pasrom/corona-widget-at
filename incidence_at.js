@@ -27,7 +27,6 @@ const urlTimeline = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZs
 const urlRSeries = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQldP8uIuZsfCQWIBUkgybPnIhTEbXlXk3xF2qW1hEOH3Qrh9F8340mXJj6SCGS_iTcUolVmwhwjphx/pub?gid=776589868&single=true&output=csv"
 const urlVaccinations = "https://info.gesundheitsministerium.gv.at/data/COVID19_vaccination_certificates.csv"
 
-const reverseGeocodingUrl = (location) => `https://nominatim.openstreetmap.org/search.php?q=${location.latitude.toFixed(3)}%2C%20${location.longitude.toFixed(3)}&polygon_geojson=1&format=jsonv2`
 const jsonBKZData = "https://gist.githubusercontent.com/pasrom/8b1c9d5def267f5abee45073a153b36a/raw/districts.json"
 
 const widgetSizes = {
@@ -245,11 +244,9 @@ async function getLocation() {
 
 async function getBkzNumber(url, location) {
   const act_location = await getLocation();
-  let discrict_from_gps = await new Request(reverseGeocodingUrl(act_location)).loadJSON()
-  let BKZData = await new Request(url).loadJSON()
-  tmp = discrict_from_gps[0].display_name
-  reg = /Bezirk (.*?),/
-  district = reg.exec(tmp)[1]
+  const BKZData = await new Request(url).loadJSON()
+  const tmp = await Location.reverseGeocode(act_location.latitude, act_location.longitude)
+  const district = tmp[0].subAdministrativeArea
   for (var i = 0; i < BKZData.length; i++) {
     if (BKZData[i].Bezirk === district) {
       return BKZData[i].BKZ + "," + "📍" + BKZData[i].KFZ
