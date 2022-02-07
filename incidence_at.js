@@ -249,13 +249,13 @@ async function getBkzNumber(url, location) {
   let BKZData = await new Request(url).loadJSON()
   tmp = discrict_from_gps[0].display_name
   reg = /Bezirk (.*?),/
-  disctrict = reg.exec(tmp)[1]
+  district = reg.exec(tmp)[1]
   for (var i = 0; i < BKZData.length; i++) {
-    if (BKZData[i].Bezirk === disctrict) {
+    if (BKZData[i].Bezirk === district) {
       return BKZData[i].BKZ + "," + "📍" + BKZData[i].KFZ
     }
   }
-  throw "No district <" + disctrict + "> could be matched with the current position!"
+  throw "No district <" + district + "> could be matched with the current position!"
 }
 
 async function getCsvData(url, fileName, splitChar) {
