@@ -255,7 +255,7 @@ async function getBkzNumber(url, location) {
   throw "No district <" + district + "> could be matched with the current position!"
 }
 
-async function getCsvData(url, fileName, splitChar) {
+async function getCsvData(url, fileName) {
   var error = 0
   var request = null
   var request_str = null
@@ -283,7 +283,7 @@ async function getCsvData(url, fileName, splitChar) {
     request_str = tmp.data
   }
 
-  return request_str.split(splitChar).reverse()
+  return request_str.split(/\r\n|\n/).reverse()
 }
 
 async function createWidget(widgetSize, daysDisplayed) {
@@ -312,11 +312,11 @@ async function createWidget(widgetSize, daysDisplayed) {
   const locations = parameter.split(";").map(parseLocation)
   const states = "10,🇦🇹".split(";").map(parseLocation)
 
-  const timeline_gkz_lines = await getCsvData(urlTimelineGkz, "Timeline_GKZ", "\n")
-  const timeline_lines = await getCsvData(urlTimeline, "Timeline", "\n")
-  const timeline_austria_lines = await getCsvData(urlTimelineAustria, "Timeline_Austria", "\n")
-  const r_series = await getCsvData(urlRSeries, "r-series", "\r\n")
-  const vaccinations = await getCsvData(urlVaccinations, "Vaccinations", "\r\n")
+  const timeline_gkz_lines = await getCsvData(urlTimelineGkz, "Timeline_GKZ")
+  const timeline_lines = await getCsvData(urlTimeline, "Timeline")
+  const timeline_austria_lines = await getCsvData(urlTimelineAustria, "Timeline_Austria")
+  const r_series = await getCsvData(urlRSeries, "r-series")
+  const vaccinations = await getCsvData(urlVaccinations, "Vaccinations")
 
   vaccinations_data = getVaccinations(vaccinations, states[0])
 
