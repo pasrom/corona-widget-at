@@ -242,6 +242,35 @@ async function getLocation() {
   }
 }
 
+async function getBkzNumberTest(url, location) {
+  const BKZData = await new Request(url).loadJSON()
+  log(BKZData)
+  log("start " + BKZData.length)
+  var start = 50
+  var end = 95
+  if(end > BKZData.length) {
+    end = BKZData.length
+  }
+  for (var k = start; k < end; k++) {
+    lat = parseFloat(BKZData[k].lat)
+    lon = parseFloat(BKZData[k].lon)
+    const tmp = await Location.reverseGeocode(lat, lon)
+    const district = tmp[0].subAdministrativeArea
+    found = 0
+    for (var i = start; i < end; i++) {
+      if (BKZData[i].Bezirk === district) {
+        found = 1
+        break
+      }
+    }
+    log(BKZData[k].BKZ)
+    if (found === 0) {
+      log("not found! dis: " + district + " bkz: ")
+    }
+  }
+  log("finished!!!")
+}
+
 async function getBkzNumber(url, location) {
   const act_location = await getLocation();
   const BKZData = await new Request(url).loadJSON()
@@ -300,7 +329,9 @@ async function createWidget(widgetSize, daysDisplayed) {
   }
   /* remove last ';' if one is present */
   parameter = parameter.replace(/;\s*$/, "");
-
+  //getBkzNumberTest(jsonBKZData)
+  //return list
+  
   try {
     BKZNr = await getBkzNumber(jsonBKZData) + ";"
   } catch (e) {
